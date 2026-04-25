@@ -24,20 +24,31 @@ COL = {
     'bucket':              'Suggested Bucket',
     'g0':                  'G0_Genre',
     'g1':                  'G1_Subgenre',
-    # Tags
-    'R1_Slow':             'R1_Slow',
-    'R2_Repetitive':       'R2_Repetitive',
-    'R3_VibeClash':        'R3_VibeClash',
-    'R4_HighConcept':      'R4_HighConcept',
-    'R5_Dense':            'R5_Dense',
-    'R6_WeakWriting':      'R6_WeakWriting',
-    'R7_SeriesFatigue':    'R7_SeriesFatigue',
+    # Risk tags (v5)
+    'R1_Slow':                     'R1_Slow',
+    'R2_Repetitive':               'R2_Repetitive',
+    'R3a_CharacterDisconnect':     'R3a_CharacterDisconnect',
+    'R3b_VibeClash':               'R3b_VibeClash',
+    'R4_HighConcept':              'R4_HighConcept',
+    'R5_Dense':                    'R5_Dense',
+    'R6_WeakWriting':              'R6_WeakWriting',
+    'R7_SeriesFatigue':            'R7_SeriesFatigue',
+    'R8_LowPayoff':                'R8_LowPayoff',
+    'R9_UnconvincingRelationship': 'R9_UnconvincingRelationship',
+    'R10_UnderdevelopedConcept':   'R10_UnderdevelopedConcept',
+    'R11_LowSubstance':            'R11_LowSubstance',
+    'R12_PoorCohesion':            'R12_PoorCohesion',
+    'R13_EmptyIntensity':          'R13_EmptyIntensity',
+    'R14_LowFantasyPayoff':        'R14_LowFantasyPayoff',
+    'R15_FlatExecution':           'R15_FlatExecution',
+    # Reward tags
     'P1_Distinctive':      'P1_Distinctive',
     'P2_Propulsive':       'P2_Propulsive',
     'P3_Emotional':        'P3_Emotional',
     'P4_Clever':           'P4_Clever',
     'P5_Structure':        'P5_Structure',
     'P6_Voice':            'P6_Voice',
+    # Vibe tags
     'V1_Speculative':      'V1_Speculative',
     'V2_Dark':             'V2_Dark',
     'V3_Romantic':         'V3_Romantic',
@@ -46,8 +57,13 @@ COL = {
     'V6_ShortOrStandalone':'V6_ShortOrStandalone',
 }
 
-RISK_TAGS   = ['R1_Slow','R2_Repetitive','R3_VibeClash','R4_HighConcept',
-               'R5_Dense','R6_WeakWriting','R7_SeriesFatigue']
+RISK_TAGS   = [
+    'R1_Slow', 'R2_Repetitive', 'R3a_CharacterDisconnect', 'R3b_VibeClash',
+    'R4_HighConcept', 'R5_Dense', 'R6_WeakWriting', 'R7_SeriesFatigue',
+    'R8_LowPayoff', 'R9_UnconvincingRelationship', 'R10_UnderdevelopedConcept',
+    'R11_LowSubstance', 'R12_PoorCohesion', 'R13_EmptyIntensity',
+    'R14_LowFantasyPayoff', 'R15_FlatExecution',
+]
 REWARD_TAGS = ['P1_Distinctive','P2_Propulsive','P3_Emotional',
                'P4_Clever','P5_Structure','P6_Voice']
 VIBE_TAGS   = ['V1_Speculative','V2_Dark','V3_Romantic','V4_PlotDriven',
@@ -101,9 +117,13 @@ def load_library(csv_path: str) -> tuple[list[dict], dict]:
                 'g1':         row.get(COL['g1'], '').strip(),
             }
 
-            # Load all tags
+            # Load all tags (new columns default to 0 if not in CSV)
             for tag in ALL_TAGS:
                 book[tag] = _safe_int(row.get(COL[tag]))
+
+            # Legacy migration: old CSV uses R3_VibeClash; map it to R3b_VibeClash
+            if book['R3b_VibeClash'] == 0 and _safe_int(row.get('R3_VibeClash')):
+                book['R3b_VibeClash'] = 1
 
             books.append(book)
 

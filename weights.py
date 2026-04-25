@@ -1,4 +1,4 @@
-# weights.py — all tunable constants in one place
+# weights.py — v5 algorithm weights
 
 WEIGHTS = {
     # Base score
@@ -6,29 +6,44 @@ WEIGHTS = {
     'w_author':   0.40,
     'w_momentum': 0.10,
 
-    # Risk penalty
-    'risk_mult': 0.70,
-    'R1_Slow':        0.18,
-    'R2_Repetitive':  0.12,
-    'R3_VibeClash':   0.08,
-    'R4_HighConcept': 0.05,
-    'R5_Dense':       0.12,
-    'R6_WeakWriting': 0.20,
-    'R7_SeriesFatigue': 0.15,
+    # Risk penalty (multiplicative × risk_mult against base)
+    'risk_mult':                 0.70,
+    'R1_Slow':                   0.03,
+    'R2_Repetitive':             0.12,
+    'R3a_CharacterDisconnect':   0.06,
+    'R3b_VibeClash':             0.10,
+    'R4_HighConcept':            0.05,
+    'R5_Dense':                  0.12,
+    'R6_WeakWriting':            0.10,
+    'R7_SeriesFatigue':          0.15,
+    'R8_LowPayoff':              0.09,
+    'R9_UnconvincingRelationship': 0.09,
+    'R10_UnderdevelopedConcept': 0.09,
+    'R11_LowSubstance':          0.11,
+    'R12_PoorCohesion':          0.09,
+    'R13_EmptyIntensity':        0.08,
+    'R14_LowFantasyPayoff':      0.09,
+    'R15_FlatExecution':         0.07,
 
-    # Reward boost
-    'reward_mult':   0.30,
+    # Reward boost (additive × reward_mult)
+    'reward_mult':    0.30,
     'P1_Distinctive': 0.25,
     'P2_Propulsive':  0.20,
-    'P3_Emotional':   0.15,
-    'P4_Clever':      0.15,
+    'P3_Emotional':   0.15,  # graded 0 / 0.5 / 1.0
+    'P4_Clever':      0.15,  # graded 0 / 0.5 / 1.0; halved if P3_Emotional ≤ 0.5
     'P5_Structure':   0.15,
     'P6_Voice':       0.10,
 
-    # Bonuses
+    # Critical acclaim bonus (scaled by crit level 0–3)
     'crit_max':   0.15,
+
+    # Crowd divergence bonus
     'div_boost':  0.08,
-    'div_thresh': 0.5,
+    'div_thresh': 0.50,
+
+    # Interaction penalties (direct subtraction from raw score)
+    'int_r4_r12':    0.05,  # R4_HighConcept + R12_PoorCohesion → confusion stack
+    'int_r1_payoff': 0.04,  # R1_Slow + (R8_LowPayoff or R14_LowFantasyPayoff)
 }
 
 THRESHOLDS = {
@@ -38,10 +53,9 @@ THRESHOLDS = {
     # below 0.60 = Cut
 }
 
-# Map app verdict names to internal bucket names
 BUCKET_DISPLAY = {
     'Strong Keep': 'Strong Inkling',
     'Keep':        'Strong Inkling',
     'Maybe':       'On the Fence',
-    'Cut':         'Pass on It',
+    'Cut':         'Hard Pass',
 }

@@ -1,3 +1,9 @@
+anthropic>=0.50.0
+python-jose[cryptography]>=3.3.0
+# bcrypt removed — using stdlib hashlib.pbkdf2_hmac (Python 3.13 compatible)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+pydantic[email]>=2.0.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1

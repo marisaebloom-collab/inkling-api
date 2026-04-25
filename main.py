@@ -16,7 +16,10 @@ from pydantic import BaseModel
 
 from database import engine
 import models  # ensures all ORM classes are registered before create_all
-from auth import router as auth_router, get_current_user
+from auth import router as auth_router, get_current_user, DEV_MODE
+from database import get_db
+from sqlalchemy.orm import Session
+from models import User
 from library import load_library, find_book, ALL_TAGS, RISK_TAGS, REWARD_TAGS, VIBE_TAGS
 from score import score_book
 from weights import BUCKET_DISPLAY
@@ -40,6 +43,21 @@ models.Base.metadata.create_all(bind=engine)
 
 # Auth router
 app.include_router(auth_router)
+
+# ── Dev bypass: mark library as built ─────────────────────────────────────────
+from fastapi import Depends
+
+@app.post('/library/dev-skip', include_in_schema=DEV_MODE)
+def library_dev_skip(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dev-only: mark library_built=True without uploading a CSV."""
+    if not DEV_MODE:
+        raise HTTPException(404, 'Not found')
+    current_user.library_built = True
+    db.commit()
+    return {'ok': True}
 
 # ── Load library once on startup ───────────────────────────────────────────────
 print(f"Loading library from {CSV_PATH}…")

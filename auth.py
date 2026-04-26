@@ -234,3 +234,24 @@ def dev_register(body: _DevRegisterRequest, db: Session = Depends(get_db)):
     db.refresh(user)
     _create_default_settings(db, user)
     return TokenResponse(access_token=_create_token(user.id))
+
+
+_MARISA_EMAIL = 'marisa@inkling.app'
+
+@router.get('/dev-marisa-token', response_model=TokenResponse, include_in_schema=DEV_MODE)
+def dev_marisa_token(db: Session = Depends(get_db)):
+    """Dev-only: return a JWT for Marisa's account, creating it if it doesn't exist.
+    No credentials required — hardcoded bypass for the 'Use as Marisa' button.
+    """
+    if not DEV_MODE:
+        raise HTTPException(404, 'Not found')
+
+    user = db.query(User).filter(User.email == _MARISA_EMAIL).first()
+    if not user:
+        user = User(email=_MARISA_EMAIL)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        _create_default_settings(db, user)
+
+    return TokenResponse(access_token=_create_token(user.id))

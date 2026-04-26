@@ -9,9 +9,10 @@ import requests
 from pathlib import Path
 
 import anthropic
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPBearer as _HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
 from database import engine
@@ -19,8 +20,9 @@ import models  # ensures all ORM classes are registered before create_all
 from auth import router as auth_router, get_current_user, DEV_MODE
 from database import get_db
 from sqlalchemy.orm import Session
-from models import User
+from models import User, UserSettings
 from library import load_library, find_book, ALL_TAGS, RISK_TAGS, REWARD_TAGS, VIBE_TAGS
+from upload import router as upload_router
 from score import score_book
 from weights import BUCKET_DISPLAY
 
@@ -44,8 +46,46 @@ models.Base.metadata.create_all(bind=engine)
 # Auth router
 app.include_router(auth_router)
 
-# ── Dev bypass: mark library as built ─────────────────────────────────────────
+# Library upload + calibration router
+app.include_router(upload_router)
+
+# ── Optional auth — resolves user from JWT if present, else None ──────────────
 from fastapi import Depends
+from fastapi.security import HTTPBearer as _OptBearer, HTTPAuthorizationCredentials as _Creds
+from jose import JWTError, jwt as _jwt
+from auth import SECRET_KEY, ALGORITHM
+
+_opt_bearer = _OptBearer(auto_error=False)
+
+def get_optional_user(
+    credentials: _Creds | None = Depends(_opt_bearer),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Return the authenticated User if a valid JWT is present, else None."""
+    if not credentials:
+        return None
+    try:
+        payload = _jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get('sub', 0))
+    except (JWTError, ValueError):
+        return None
+    return db.query(User).filter(User.id == user_id).first()
+
+
+def _get_user_weights(user: User | None, db: Session) -> dict | None:
+    """Load parsed algorithm_weights for user, or None if uncalibrated."""
+    if not user:
+        return None
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+    if not settings or not settings.algorithm_weights:
+        return None
+    try:
+        return json.loads(settings.algorithm_weights)
+    except Exception:
+        return None
+
+
+# ── Dev bypass: mark library as built ─────────────────────────────────────────
 
 @app.post('/library/dev-skip', include_in_schema=DEV_MODE)
 def library_dev_skip(
@@ -497,7 +537,7 @@ def format_tags(tags: dict) -> dict:
 
 # ── Library book result builder ────────────────────────────────────────────────
 
-def build_result(book: dict, meta: dict = None) -> dict:
+def build_result(book: dict, meta: dict = None, user_weights: dict | None = None) -> dict:
     """Score a library book (pre-tagged from CSV) and format the full response."""
     tags = {tag: book.get(tag, 0) for tag in ALL_TAGS}
 
@@ -507,7 +547,7 @@ def build_result(book: dict, meta: dict = None) -> dict:
         'momentum':           book['momentum'],
         'gr_avg':             book['gr_avg'],
         'critical_reception': book['critical_reception'],
-    }, tags)
+    }, tags, user_weights=user_weights)
 
     formatted = format_tags(tags)
     genre = [g for g in [book.get('g1', ''), book.get('g0', '')] if g]
@@ -586,6 +626,8 @@ def score_endpoint(
     author:    str = Query(None, description='Author name (optional, skips re-fetch)'),
     cover_url: str = Query(None, description='Cover URL (optional)'),
     pages:     int = Query(None, description='Page count (optional)'),
+    current_user: User | None = Depends(get_optional_user),
+    db: Session = Depends(get_db),
 ):
     """
     Score a book:
@@ -595,11 +637,14 @@ def score_endpoint(
     if not title and not isbn:
         raise HTTPException(400, 'Provide title or isbn')
 
+    # Resolve per-user weights (None = use global defaults)
+    user_weights = _get_user_weights(current_user, db) if current_user else None
+
     # 1. Library fast path
     book = find_book(BOOKS, title=title, isbn=isbn)
     if book:
         meta = ol_search(title=book['title']) if not isbn else ol_search(isbn=isbn)
-        return build_result(book, meta)
+        return build_result(book, meta, user_weights=user_weights)
 
     # 2. Not in library — fetch metadata
     if title and author:
@@ -648,7 +693,7 @@ def score_endpoint(
         'momentum':           af['momentum'],
         'gr_avg':             meta['gr_avg'],
         'critical_reception': tags.get('Critical_Reception', 0),
-    }, tags)
+    }, tags, user_weights=user_weights)
 
     formatted = format_tags(tags)
     genre = [g for g in [formatted.get('g1', ''), formatted.get('g0', '')] if g]

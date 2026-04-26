@@ -41,6 +41,7 @@ class User(Base):
     library_built   = Column(Boolean, default=False, nullable=False)
 
     authors  = relationship('AuthorProfile', back_populates='user', cascade='all, delete-orphan')
+    books    = relationship('UserBook',      back_populates='user', cascade='all, delete-orphan')
     scans    = relationship('ScanResult',    back_populates='user', cascade='all, delete-orphan')
     settings = relationship('UserSettings',  back_populates='user', cascade='all, delete-orphan',
                             uselist=False)
@@ -79,6 +80,32 @@ class AuthorProfile(Base):
     updated_at  = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 
     user = relationship('User', back_populates='authors')
+
+
+# ── UserBook ──────────────────────────────────────────────────────────────────
+
+class UserBook(Base):
+    """Raw per-book reading history, stored at CSV upload time.
+
+    Held through calibration so Claude can analyze individual books.
+    After calibration, rows remain for 'already read' detection at scan time
+    and to allow re-calibration later.
+    """
+    __tablename__ = 'user_books'
+
+    id          = Column(Integer, primary_key=True, index=True)
+    user_id     = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'),
+                         nullable=False, index=True)
+
+    title       = Column(String, nullable=False)
+    author      = Column(String, nullable=False)    # normalized First Last
+    user_rating = Column(Float,  nullable=True)     # 0–5; None if shelved unread
+    date_read   = Column(Integer, nullable=True)    # year only, for momentum
+    isbn        = Column(String,  nullable=True, index=True)
+    shelf       = Column(String,  nullable=True)    # read | currently-reading | to-read
+    tags        = Column(String,  nullable=True)    # JSON array; populated at calibration
+
+    user = relationship('User', back_populates='books')
 
 
 # ── ScanResult ────────────────────────────────────────────────────────────────
@@ -134,6 +161,11 @@ class UserSettings(Base):
 
     goodreads_connected  = Column(Boolean, default=False, nullable=False)
     storygraph_connected = Column(Boolean, default=False, nullable=False)
+
+    # Per-user algorithm weights produced by calibration — JSON blob.
+    # Keys: component_weights, reward_weights, risk_weights, taste_summary.
+    # None = user hasn't calibrated yet; scoring falls back to global weights.py values.
+    algorithm_weights = Column(String, nullable=True)
 
     updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 

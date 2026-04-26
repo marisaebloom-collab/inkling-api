@@ -191,29 +191,37 @@ def _aggregate_authors(books: list[dict]) -> list[dict]:
 
 # ── Calibration ───────────────────────────────────────────────────────────────
 
-def _select_calibration_sample(books: list[dict]) -> tuple[list[dict], list[dict]]:
-    """Return (high_rated, low_rated) samples for the calibration prompt."""
-    rated = [
-        b for b in books
-        if b.get('shelf') == 'read' and b.get('user_rating') and b['user_rating'] > 0
-    ]
-    high = sorted(
-        [b for b in rated if b['user_rating'] >= 4],
-        key=lambda x: (-x['user_rating'], -(x['date_read'] or 0)),
-    )
-    low = sorted(
-        [b for b in rated if b['user_rating'] <= 2],
-        key=lambda x: (x['user_rating'], -(x['date_read'] or 0)),
-    )
-    return high[:60], low[:40]
+def _get_rated_by_tier(books: list[dict]) -> dict[int, list[dict]]:
+    """Return all rated read books grouped by star rating (1–5)."""
+    tiers: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: [], 5: []}
+    for b in books:
+        if b.get('shelf') != 'read' or not b.get('user_rating'):
+            continue
+        star = int(b['user_rating'])
+        if star in tiers:
+            tiers[star].append(b)
+    return tiers
 
 
-def _build_calibration_prompt(high: list[dict], low: list[dict]) -> str:
-    def fmt(books):
-        return '\n'.join(
-            f'- "{b["title"]}" by {b["author"]} ({int(b["user_rating"])}★)'
+def _build_calibration_prompt(tiers: dict[int, list[dict]]) -> str:
+    def fmt_tier(books, label):
+        if not books:
+            return ''
+        lines = '\n'.join(
+            f'  - "{b["title"]}" by {b["author"]}'
             for b in books
         )
+        return f'{label} ({len(books)} books):\n{lines}'
+
+    sections = '\n\n'.join(filter(None, [
+        fmt_tier(tiers[5], '5★ — LOVED'),
+        fmt_tier(tiers[4], '4★ — Liked'),
+        fmt_tier(tiers[3], '3★ — Mixed / Fine'),
+        fmt_tier(tiers[2], '2★ — Disliked'),
+        fmt_tier(tiers[1], '1★ — Strongly disliked'),
+    ]))
+
+    total = sum(len(v) for v in tiers.values())
 
     reward_list = '\n'.join(f'  {k}: {v}' for k, v in _REWARD_DESC.items())
     risk_list   = '\n'.join(f'  {k}: {v}' for k, v in _RISK_DESC.items())
@@ -225,18 +233,17 @@ def _build_calibration_prompt(high: list[dict], low: list[dict]) -> str:
         'taste_summary':     'Placeholder — replace with 1–2 sentence taste description.',
     }, indent=2)
 
-    return f"""You are calibrating a personalized book recommendation algorithm for a specific reader. Analyse their reading history and return weights tailored to their taste. Use your knowledge of these books to reason about what qualities this reader values and avoids.
+    return f"""You are calibrating a personalized book recommendation algorithm for a specific reader. You have their complete rated reading history ({total} books across all rating tiers). Use your knowledge of these books to reason carefully about what qualities this reader consistently values and avoids.
 
-BOOKS THEY LOVED (4–5 stars):
-{fmt(high)}
+COMPLETE RATED READING HISTORY:
+{sections}
 
-BOOKS THEY DISLIKED (1–2 stars):
-{fmt(low)}
+The 3★ books are intentionally included — they reveal what is *insufficient* for this reader, not just what they actively disliked.
 
-REWARD TAGS — higher weight means this quality strongly predicts a high rating for this reader:
+REWARD TAGS — set higher weight if this quality strongly predicts a high rating for this reader:
 {reward_list}
 
-RISK TAGS — higher weight means this quality strongly predicts a low rating for this reader:
+RISK TAGS — set higher weight if this quality strongly predicts a low rating for this reader:
 {risk_list}
 
 COMPONENT WEIGHTS — how much to weight each base signal (must sum to 1.0):
@@ -244,25 +251,26 @@ COMPONENT WEIGHTS — how much to weight each base signal (must sum to 1.0):
   w_author:   reader's own historical ratings for this author
   w_momentum: how recently the reader has read this author
 
-Return ONLY valid JSON matching this structure exactly (adjust all numeric values to fit this reader):
+Analyse the full distribution carefully before assigning weights. Look for consistent patterns across the 5★ books, consistent failure modes across the 1–2★ books, and what separates the 4★ from the 5★. Return ONLY valid JSON matching this structure exactly:
 {example}"""
 
 
 def _run_calibration(books: list[dict]) -> dict:
-    """Call Claude to derive per-user weights. Returns the parsed weights dict."""
-    high, low = _select_calibration_sample(books)
+    """Call Claude to derive per-user weights from the complete rated library."""
+    tiers = _get_rated_by_tier(books)
+    total_high = len(tiers[4]) + len(tiers[5])
 
-    if len(high) < 5:
+    if total_high < 5:
         raise ValueError(
-            f'Not enough rated books to calibrate (need ≥5 high-rated reads, '
-            f'found {len(high)}). Add more ratings in Goodreads and re-export.'
+            f'Not enough rated books to calibrate (need ≥5 books rated 4–5★, '
+            f'found {total_high}). Add more ratings in Goodreads and re-export.'
         )
 
     api_key = os.environ.get('ANTHROPIC_API_KEY', '')
     if not api_key:
         raise RuntimeError('ANTHROPIC_API_KEY not configured')
 
-    prompt  = _build_calibration_prompt(high, low)
+    prompt  = _build_calibration_prompt(tiers)
     client  = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model      = 'claude-opus-4-5',   # Opus for calibration quality

@@ -296,6 +296,34 @@ def _run_calibration(books: list[dict]) -> dict:
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@router.post('/dev-reset', include_in_schema=False)
+def dev_reset_library(
+    current_user: User    = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    """Dev-only: wipe this user's library and algorithm back to new-user state.
+
+    Clears UserBook rows, AuthorProfile rows, algorithm_weights, and flips
+    library_built = False. Used to re-run the onboarding flow for a test account
+    without deleting the account itself.
+    """
+    from auth import DEV_MODE
+    if not DEV_MODE:
+        raise HTTPException(404, 'Not found')
+
+    db.query(UserBook).filter(UserBook.user_id == current_user.id).delete()
+    db.query(AuthorProfile).filter(AuthorProfile.user_id == current_user.id).delete()
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
+    if settings:
+        settings.algorithm_weights = None
+
+    current_user.library_built = False
+    db.commit()
+
+    return {'ok': True, 'message': f'Library reset for {current_user.email}'}
+
+
 @router.post('/upload', status_code=202)
 async def upload_library(
     file:         UploadFile    = File(...),

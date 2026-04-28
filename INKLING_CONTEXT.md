@@ -69,10 +69,11 @@ Inkling addresses a UX moment that no product currently owns: the point-of-purch
 | Color | Hex | Usage |
 |-------|-----|-------|
 | Plum | `#7c3060` | Brand, tile backgrounds, bonuses |
-| Amber/Gold | `#df832e` | Primary accent, all gold text/icons — matches the Inkling wordmark |
-| Emerald | `#1e6b4a` | Strong Inkling verdict |
-| Gold/Amber | `#df832e` | On the Fence verdict |
-| Burgundy | `#aa2840` | Hard Pass verdict, risk tags |
+| Amber/Gold | `#df832e` | Primary accent, all gold text/icons — Strong Inkling verdict |
+| Light Plum | `#c084a0` | On the Fence verdict |
+| Mauve | `#b478a0` | Vibe chips |
+| Rose | `#c45070` | Watch Out For chips (negative-lift tropes) |
+| Burgundy | `#aa2840` | Hard Pass verdict, risk tag accent |
 | Black | `#000000` | All screen backgrounds |
 
 ### Typography
@@ -116,7 +117,7 @@ Inkling addresses a UX moment that no product currently owns: the point-of-purch
 | `main.py` | FastAPI server, all endpoints |
 | `score.py` | `score_book()` function |
 | `weights.py` | All tunable constants |
-| `library.py` | CSV loader, `find_book()`, `load_library()`, `ALL_TAGS` |
+| `library.py` | CSV loader, `find_book()`, `load_library()` |
 | `inkling_mobile.html` | Complete frontend (~8.4MB, embedded videos) |
 | `books.csv` | Goodreads export with v5 tags (single-user, pre-auth) |
 | `INKLING_CONTEXT.md` | This file |
@@ -215,40 +216,37 @@ pydantic[email]
 
 ## Scoring Algorithm (v5 — Current)
 
+See `algorithm_handoff.md` for the authoritative spec. Summary:
+
 ### Base Score
 ```
-base = 0.50 × pred5 + 0.40 × author_avg + 0.10 × momentum
+base = 0.50 × pred5 + 0.40 × author_signal + 0.10 × momentum_signal
 ```
-- `pred5`: predicted 5★ probability (GR avg + author history)
-- `author_avg`: Marisa's avg rating for this author (0–5); falls back to pred5 if unknown author
-- `momentum`: 2=read within 2yr, 1=within 5yr, 0=older/unknown; falls back to 0.5 if unknown
+- `author_signal` = author_avg / 5.0 if known, else pred5
+- `momentum_signal` = momentum / 2.0 if > 0, else 0.5
 
-### Risk Penalties (multiplicative × 0.70 against base)
-All binary 0/1:
-- R1_Slow −3pts · R2_Repetitive −12pts · R3a_CharacterDisconnect −6pts · R3b_VibeClash −10pts
-- R4_HighConcept −5pts · R5_Dense −12pts · R6_WeakWriting −10pts · R7_SeriesFatigue −15pts
-- R8_LowPayoff −9pts · R9_UnconvincingRelationship −9pts · R10_UnderdevelopedConcept −9pts
-- R11_LowSubstance −11pts · R12_PoorCohesion −9pts · R13_EmptyIntensity −8pts
-- R14_LowFantasyPayoff −9pts · R15_FlatExecution −7pts
+### Risk Tags (binary 0/1, multiplicative penalty × 0.65)
+- R1_Slow (0.09) · R2_Repetitive (0.11) · R3_VibeClash (0.07) · R4_HighConcept (0.13)
+- R5_InaccessibleProse (0.07) · R6_WeakWriting (0.23) · R7_SeriesFatigue (0.12)
+- R8_TooLong (0.00) · R9_ContentWarnings (0.00) · R10_TranslationQuality (0.00) · R11_DatedContent (0.00)
+- R8–R11 are zeroed but kept in the tag set for future users — DO NOT REMOVE
 
-### Interaction Penalties
-- R4_HighConcept + R12_PoorCohesion → extra −5pts (confusion stack)
-- R1_Slow + (R8_LowPayoff OR R14_LowFantasyPayoff) → extra −4pts
+### Reward Tags (binary 0/1, additive boost × 0.30)
+- P1_Distinctive (0.12) · P2_Propulsive (0.15) · P3_Emotional (0.22) · P4_Clever (0.10)
+- P5_Structure (0.08) · P6_Voice (0.10) · P7_Satisfying (0.23)
 
-### Reward Boosts (additive × 0.30)
-- P1_Distinctive +25pts · P2_Propulsive +20pts
-- P3_Emotional +15pts (GRADED: 0/0.5/1.0)
-- P4_Clever +15pts (GRADED: 0/0.5/1.0 — halved if Emotional ≤ 0.5)
-- P5_Structure +15pts · P6_Voice +10pts
+### Trope Tags (scored via TROPE_LIFTS in weights.py)
+- 69 T_ tags, author-adjusted Bayesian shrinkage lifts
+- Library-size gated: 0.00 < 100 books, 0.03 at 100–199, 0.06 at 200–299, 0.10 at ≥ 300
 
 ### Bonuses
-- Critical acclaim: award winner +15pts, shortlist +10pts, notable +5pts
-- Crowd divergence: +8pts if Marisa rates author 0.5+ above GR avg
+- Critical reception: (crit / 3) × 0.12 (max +0.12 for award winner)
+- Crowd divergence: +0.08 if author_avg − gr_avg > 0.5 and author known
 
 ### Verdict Thresholds
-- **Strong Inkling**: ≥ 75%
-- **On the Fence**: 60–74%
-- **Hard Pass**: < 60%
+- **Strong Inkling**: ≥ 0.75
+- **On the Fence**: 0.60–0.74
+- **Hard Pass**: < 0.60
 
 ---
 
@@ -257,15 +255,15 @@ All binary 0/1:
 ### Flow
 1. `/score` fetches metadata (Google Books first → Open Library fallback)
 2. `get_goodreads_rating()` fetches the book's actual GR page via book ID (NOT search page)
-3. `get_tags()` calls `claude-sonnet-4-6`, max_tokens=800, returns JSON with all tags + genre
+3. `get_tags()` calls `claude-sonnet-4-6`, max_tokens=2048, returns JSON with all R/P/V/T/G tags
 4. `format_tags()` converts to labeled display format
 5. `score_book()` runs algorithm
 
 ### Critical Rules in Tagging Prompt
-- **R6_WeakWriting**: ONLY if GR avg < 3.5 AND reviews explicitly criticize prose. NEVER apply to GR 3.5+ authors. Prompt shows actual GR avg.
-- **P3_Emotional**: graded 0/0.5/1.0 — 1.0 only for books with lingering impact
-- **P4_Clever**: graded 0/0.5/1.0 — 1.0 only if cleverness fully pays off
-- Reward tags: apply generously when quality is genuinely present
+- **R6_WeakWriting**: ONLY fire on direct evidence of weak prose (reviews explicitly citing flat/forgettable writing). Never fire on low GR avg alone or divisive books.
+- **R4_HighConcept**: Only if execution is the specific complaint, not just because a book is ambitious.
+- **P7_Satisfying**: Strongest single predictor (+0.491 corr). DO NOT fire if reviews cite unsatisfying/abrupt ending.
+- All tags are binary 0/1 (P3/P4 no longer graded)
 
 ### Goodreads Rating Scraping
 - Uses `gr_find_book_id()` → fetches `/book/show/{id}` directly
@@ -286,7 +284,7 @@ All binary 0/1:
 - Two plum tiles: "Scan a Book" + "Identify Cover" (gold text/icons, internal plum glow)
 - Search bar (amber border, dark background)
 - Recent Lookups: compact horizontal scroll strip (56px covers + verdict badge)
-- Bottom nav: Home + Scan + Recents (gold icons, dot indicator on active)
+- Bottom nav: Home + Recents (gold icons, dot indicator on active)
 
 ### Result Screen
 - Header: animated book video + Inkling wordmark (bottom-aligned)
@@ -327,7 +325,7 @@ All binary 0/1:
 ## Known Issues & Hard Rules
 
 ### WKWebView JavaScript Constraints
-- **NEVER use `async` on `renderRecents()` or `renderHomeStrip()`** — they call synchronous `getRecents()`, the `async` keyword alone breaks WKWebView's JS parser even without any `await` inside
+- **NEVER use `async` on `renderRecents()`** — it calls synchronous `getRecents()`, and the `async` keyword alone breaks WKWebView's JS parser even without any `await` inside. `renderHomeStrip()` IS async (uses `.catch()` at its call site) — keep it that way.
 - The splash timeout must use `function(){}` not `async () => {}`: `setTimeout(function(){goTo('home');renderHomeStrip();}, 6000);`
 - Core networking functions (`scoreBook`, `liveSearch`, `startCamera`, etc.) can and should use async/await — WKWebView supports it for fetch calls
 
@@ -338,13 +336,14 @@ All binary 0/1:
 - Always check for async on non-async functions after edits
 
 ### Scoring/Tagging Rules
-- `max_tokens` for tagging: never below 800 (30-tag JSON needs room)
+- `max_tokens` for tagging: set to 2048 (full tag JSON with all 69 tropes needs room)
 - Any weight change in `weights.py` → update profile page in `inkling_mobile.html`
 - Any new tag → update: weights.py, score.py, main.py (get_tags prompt + format_tags), inkling_mobile.html (labelMap + profile page)
 
 ### Recurring False Positives to Watch
 - **R6_WeakWriting** over-triggers: prompt explicitly guards against it but monitor. Worth 5–15pts swing.
 - **P3_Emotional, P6_Voice, P1_Distinctive** over-fire at ~85–89% — intentionally weighted modestly
+- **V5_Atmospheric** fires on ~70% of books — tagging prompt guards against it but monitor
 
 ### Data/Storage
 - **No localStorage** — replaced with in-memory `RECENTS` array (Safari on iOS over HTTP blocks localStorage). Resets on reload — accepted tradeoff.
@@ -356,11 +355,21 @@ All binary 0/1:
 
 1. **Auth + multi-user architecture** *(in sprint)*: `database.py`, `models.py`, `auth.py`, library upload endpoint, wire per-user data into scoring. See Auth Architecture section above.
 2. **User Settings screen** *(in sprint)*: UI for `UserSettings` thresholds + `goodreads_connected`/`storygraph_connected`. Requires threading per-user thresholds into `score_book()`.
-3. **Re-tag library**: Run `inkling_tagger_v2.html` locally to re-tag all 544 books with new 16-tag model. Outputs CSV → paste into `goodreads_model_v10.xlsx`. This is the most important pending task for scoring accuracy.
-4. **Apple Developer account ($99/year)**: Required for TestFlight beta and App Store. Eliminates 7-day cert expiry.
-5. **"Add to Goodreads" button**: UI exists (soft plum → saturated plum + checkmark on tap), not wired. Needs Goodreads OAuth.
-6. **Beta outreach**: One-pager written. Three paths: beta testing, guidance/expertise, collaboration. Ready to send when app is stable.
-7. **App Store submission**: Requirements identified, not yet pursued.
+3. ~~**Result screen + profile UI**~~ *(done 2026-04-27)*: Tiered chips (Strong/Moderate/Soft opacity), positive tropes nested under Rewards, negative under Risks, neutral in Additional Tropes & Themes section. Profile updated with v5 tag weights and calibration indicator.
+4. **Library data sync** *(decided, not built)*: Three options discussed — preference is Option B (Sync button with smart diff). Diff against existing UserBook rows, only tag new books. Prompt periodically: "Last synced 3 months ago. Update your algorithm?" Option C (push notification reminder every 3 months) pairs well with B.
+5. **Upload error handling** *(spec decided, not built)*:
+   - Wrong file type → "Please upload a CSV or Excel file"
+   - Missing required columns → "We couldn't find a rating column. Here's what we need and how to map yours"
+   - Empty or too small → "Only X books found — are you sure this is your full library?"
+   - Encoding issues → auto-attempt UTF-8 and Latin-1 before failing
+   - API rate limit mid-tagging → automatic retry with backoff, user never sees it
+   - Single book fails to tag → skip and continue, flag for retry. Don't abort whole job.
+   - API completely down → pause job, notify user "Processing paused — we'll resume automatically"
+6. **Re-tag library**: Re-tag all books with new v5 tag model (R1–R11, P1–P7, T_ tropes). Required for scoring accuracy on the CSV fast-path.
+7. **Apple Developer account ($99/year)**: Required for TestFlight beta and App Store. Eliminates 7-day cert expiry.
+8. **"Add to Goodreads" button**: UI exists (soft plum → saturated plum + checkmark on tap), not wired. Needs Goodreads OAuth.
+9. **Beta outreach**: One-pager written. Three paths: beta testing, guidance/expertise, collaboration. Ready to send when app is stable.
+10. **App Store submission**: Requirements identified, not yet pursued.
 
 ---
 

@@ -1,131 +1,168 @@
-# score.py — v5 scoring with optional per-user weight override
-
-from weights import WEIGHTS, THRESHOLDS, BUCKET_DISPLAY
-
-RISK_TAGS = [
-    'R1_Slow', 'R2_Repetitive', 'R3a_CharacterDisconnect', 'R3b_VibeClash',
-    'R4_HighConcept', 'R5_Dense', 'R6_WeakWriting', 'R7_SeriesFatigue',
-    'R8_LowPayoff', 'R9_UnconvincingRelationship', 'R10_UnderdevelopedConcept',
-    'R11_LowSubstance', 'R12_PoorCohesion', 'R13_EmptyIntensity',
-    'R14_LowFantasyPayoff', 'R15_FlatExecution',
-    # New tags (calibration-era additions)
-    'R16_HeavyWorldBuilding', 'R17_RomanceOverPlot',
-    'R18_DisturbingContent',  'R19_EnsembleOverload',
-]
+# score.py — v5
+from __future__ import annotations
+import numpy as np
+from weights import (
+    RISK_WEIGHTS, REWARD_WEIGHTS,
+    RISK_MULT, REWARD_MULT,
+    CRIT_MAX, DIV_BOOST, DIV_THRESH,
+    THRESHOLDS, BUCKET_DISPLAY,
+    TROPE_LIFTS, TROPE_NORMALIZER,
+    get_trope_multiplier,
+    risk_tier, reward_tier, trope_tier,
+)
 
 
-def _merge_weights(user_weights: dict | None) -> tuple[dict, dict]:
+def get_bucket(score: float) -> str:
+    if score >= THRESHOLDS['Strong Keep']: return 'Strong Keep'
+    if score >= THRESHOLDS['Keep']:        return 'Keep'
+    if score >= THRESHOLDS['Maybe']:       return 'Maybe'
+    return 'Cut'
+
+
+def _merge_weights(user_weights: dict | None) -> tuple[dict, dict, dict]:
     """Merge per-user calibration weights with global defaults.
 
-    Returns (W, thresholds) where W is the effective weight dict.
-    Per-user values override globals; anything missing falls back to WEIGHTS.
+    Returns (risk_w, reward_w, comp_w). Per-user values override globals;
+    unrecognised tags are ignored so stale calibration data can't break scoring.
     """
+    risk_w   = dict(RISK_WEIGHTS)
+    reward_w = dict(REWARD_WEIGHTS)
+    comp_w   = {'w_pred5': 0.50, 'w_author': 0.40, 'w_momentum': 0.10}
+
     if not user_weights:
-        return dict(WEIGHTS), dict(THRESHOLDS)
-
-    W = dict(WEIGHTS)   # start from global defaults
-
-    cw = user_weights.get('component_weights', {})
-    if cw.get('w_pred5'):    W['w_pred5']    = float(cw['w_pred5'])
-    if cw.get('w_author'):   W['w_author']   = float(cw['w_author'])
-    if cw.get('w_momentum'): W['w_momentum'] = float(cw['w_momentum'])
-
-    for tag, val in user_weights.get('reward_weights', {}).items():
-        W[tag] = float(val)
+        return risk_w, reward_w, comp_w
 
     for tag, val in user_weights.get('risk_weights', {}).items():
-        W[tag] = float(val)
+        if tag in risk_w:
+            risk_w[tag] = float(val)
+    for tag, val in user_weights.get('reward_weights', {}).items():
+        if tag in reward_w:
+            reward_w[tag] = float(val)
+    cw = user_weights.get('component_weights', {})
+    if cw.get('w_pred5'):    comp_w['w_pred5']    = float(cw['w_pred5'])
+    if cw.get('w_author'):   comp_w['w_author']   = float(cw['w_author'])
+    if cw.get('w_momentum'): comp_w['w_momentum'] = float(cw['w_momentum'])
 
-    # Thresholds stay global for now (UserSettings can override later)
-    return W, dict(THRESHOLDS)
+    return risk_w, reward_w, comp_w
 
 
-def score_book(book: dict, tags: dict, user_weights: dict | None = None) -> dict:
+def _trope_contribution(tags: dict, lifts: dict, n_rated: int) -> float:
     """
+    Compute the trope score term.
+
+    Sums the shrunk lifts for all T_ tags present in the book,
+    normalizes to [-1, +1], then scales by the library-size multiplier.
+    """
+    raw = sum(lifts.get(t, 0.0) for t in lifts if tags.get(t, 0) == 1)
+    normalized = float(np.clip(raw / TROPE_NORMALIZER, -1.0, 1.0))
+    return get_trope_multiplier(n_rated) * normalized
+
+
+def score_book(book: dict, tags: dict,
+               n_rated: int = 300,
+               trope_lifts: dict | None = None,
+               user_weights: dict | None = None) -> dict:
+    """
+    Score a single book under v5.
+
     Args:
         book: dict with keys:
-            pred5               float 0-1   Predicted 5-star probability
+            pred5               float 0-1   Predicted 5★ probability
             author_avg          float 0-5   Reader's avg rating for author (0=unknown)
             momentum            int   0-2   Author recency signal
             gr_avg              float       Goodreads average rating
             critical_reception  int   0-3
-        tags: dict with R/P/V tag keys (0/1, P3/P4 graded 0/0.5/1.0)
+        tags: dict with R1-R11, P1-P7, T_* as 0/1 ints.
+              V, G0, G1 tags are accepted but do not affect score.
+        n_rated: user's count of rated + DNF books (controls trope multiplier).
+                 Defaults to 300 (full multiplier) for single-book lookups.
+        trope_lifts: optional user-specific lift table. Defaults to TROPE_LIFTS.
         user_weights: optional dict from UserSettings.algorithm_weights (parsed JSON).
                       If None, falls back to global weights.py values.
 
     Returns:
-        dict with risk_score, reward_score, master_score, bucket, verdict, pct_match
+        dict with:
+            master_score    float 0-1
+            bucket          'Strong Keep' | 'Keep' | 'Maybe' | 'Cut'
+            verdict         'Strong Inkling' | 'On the Fence' | 'Hard Pass'
+            pct_match       int 0-100
+            risk_score      float
+            reward_score    float
+            trope_contrib   float
+            risks           list of (tag, weight, tier) for present active risk tags
+            rewards         list of (tag, weight, tier) for present reward tags
+            tropes          list of (tag, lift, tier, sign) sorted by |lift| desc
     """
-    W, thresholds = _merge_weights(user_weights)
+    if trope_lifts is None:
+        trope_lifts = TROPE_LIFTS
 
-    pred5      = float(book.get('pred5', 0))
-    author_avg = float(book.get('author_avg', 0))
-    momentum   = float(book.get('momentum', 0))
-    gr_avg     = float(book.get('gr_avg', 0))
-    crit       = int(book.get('critical_reception', 0))
+    risk_w, reward_w, comp_w = _merge_weights(user_weights)
 
-    # Base score
+    pred5      = float(book.get('pred5', 0) or 0)
+    author_avg = float(book.get('author_avg', 0) or 0)
+    momentum   = float(book.get('momentum', 0) or 0)
+    gr_avg     = float(book.get('gr_avg', 0) or 0)
+    crit       = int(book.get('critical_reception', 0) or 0)
+
+    # ── Base score ────────────────────────────────────────────────────────────
     author_signal   = (author_avg / 5.0) if author_avg > 0 else pred5
     momentum_signal = (momentum / 2.0)   if momentum  > 0 else 0.5
-    base = (W['w_pred5']    * pred5
-          + W['w_author']   * author_signal
-          + W['w_momentum'] * momentum_signal)
+    base = (comp_w['w_pred5']    * pred5
+          + comp_w['w_author']   * author_signal
+          + comp_w['w_momentum'] * momentum_signal)
 
-    # Risk penalty (multiplicative)
-    risk = sum(W.get(tag, 0) * float(tags.get(tag, 0)) for tag in RISK_TAGS)
-    penalized = base * (1 - W['risk_mult'] * risk)
+    # ── Risk penalty (multiplicative) ─────────────────────────────────────────
+    risk_score = sum(risk_w.get(k, 0) * float(tags.get(k, 0) or 0)
+                     for k in risk_w)
+    penalized = base * (1 - RISK_MULT * risk_score)
 
-    # Reward boost — P3/P4 are graded (0, 0.5, 1.0)
-    p3_val = float(tags.get('P3_Emotional', 0))
-    p4_val = float(tags.get('P4_Clever', 0))
-    if p3_val <= 0.5:
-        p4_val *= 0.5
+    # ── Reward boost (additive) ───────────────────────────────────────────────
+    reward_score = sum(reward_w.get(k, 0) * float(tags.get(k, 0) or 0)
+                       for k in reward_w)
+    boost = REWARD_MULT * reward_score
 
-    reward = (
-        W.get('P1_Distinctive', 0) * float(tags.get('P1_Distinctive', 0))
-      + W.get('P2_Propulsive',  0) * float(tags.get('P2_Propulsive',  0))
-      + W.get('P3_Emotional',   0) * p3_val
-      + W.get('P4_Clever',      0) * p4_val
-      + W.get('P5_Structure',   0) * float(tags.get('P5_Structure',   0))
-      + W.get('P6_Voice',       0) * float(tags.get('P6_Voice',       0))
-      + W.get('P7_Lyrical',     0) * float(tags.get('P7_Lyrical',     0))
-      + W.get('P8_MorallyComplex', 0) * float(tags.get('P8_MorallyComplex', 0))
-      + W.get('P9_Humor',       0) * float(tags.get('P9_Humor',       0))
+    # ── Critical reception boost ──────────────────────────────────────────────
+    crit_boost = (crit / 3.0) * CRIT_MAX if crit > 0 else 0.0
+
+    # ── Crowd divergence boost ────────────────────────────────────────────────
+    div_bonus = (DIV_BOOST
+                 if author_avg > 0 and (author_avg - gr_avg) > DIV_THRESH
+                 else 0.0)
+
+    # ── Trope lift term ───────────────────────────────────────────────────────
+    trope_adj = _trope_contribution(tags, trope_lifts, n_rated)
+
+    # ── Combine, clip, round ──────────────────────────────────────────────────
+    raw    = penalized + boost + crit_boost + div_bonus + trope_adj
+    score  = round(max(0.0, min(1.0, raw)), 4)
+    bucket = get_bucket(score)
+
+    # ── UI tag lists ──────────────────────────────────────────────────────────
+    present_risks = sorted(
+        [(t, risk_w[t], risk_tier(t, risk_w))
+         for t in risk_w if tags.get(t, 0) == 1 and risk_w[t] > 0],
+        key=lambda x: x[1], reverse=True
     )
-    boost = W['reward_mult'] * reward
-
-    # Critical reception bonus
-    crit_boost = (crit / 3.0) * W['crit_max'] if crit > 0 else 0.0
-
-    # Crowd divergence bonus
-    div_bonus = (
-        W['div_boost']
-        if author_avg > 0 and (author_avg - gr_avg) > W['div_thresh']
-        else 0.0
+    present_rewards = sorted(
+        [(t, reward_w[t], reward_tier(t, reward_w))
+         for t in reward_w if tags.get(t, 0) == 1],
+        key=lambda x: x[1], reverse=True
     )
-
-    # Interaction penalties (direct subtraction)
-    interaction = 0.0
-    if tags.get('R4_HighConcept') and tags.get('R12_PoorCohesion'):
-        interaction += W['int_r4_r12']
-    if tags.get('R1_Slow') and (tags.get('R8_LowPayoff') or tags.get('R14_LowFantasyPayoff')):
-        interaction += W['int_r1_payoff']
-
-    # Combine, clip, round
-    raw   = penalized + boost + crit_boost + div_bonus - interaction
-    score = round(max(0.0, min(1.0, raw)), 4)
-
-    # Bucket
-    if   score >= thresholds['Strong Keep']: bucket = 'Strong Keep'
-    elif score >= thresholds['Keep']:        bucket = 'Keep'
-    elif score >= thresholds['Maybe']:       bucket = 'Maybe'
-    else:                                    bucket = 'Cut'
+    present_tropes = sorted(
+        [(t, trope_lifts[t], *trope_tier(t))
+         for t in trope_lifts if tags.get(t, 0) == 1],
+        key=lambda x: abs(x[1]), reverse=True
+    )
 
     return {
-        'risk_score':   round(risk, 4),
-        'reward_score': round(reward, 4),
-        'master_score': score,
-        'bucket':       bucket,
-        'verdict':      BUCKET_DISPLAY[bucket],
-        'pct_match':    round(score * 100),
+        'master_score':  score,
+        'bucket':        bucket,
+        'verdict':       BUCKET_DISPLAY[bucket],
+        'pct_match':     int(round(score * 100)),
+        'risk_score':    round(risk_score, 4),
+        'reward_score':  round(reward_score, 4),
+        'trope_contrib': round(trope_adj, 4),
+        'risks':         present_risks,
+        'rewards':       present_rewards,
+        'tropes':        present_tropes,
     }

@@ -21,10 +21,15 @@ from auth import router as auth_router, get_current_user, DEV_MODE
 from database import get_db
 from sqlalchemy.orm import Session
 from models import User, UserSettings
-from library import load_library, find_book, ALL_TAGS, RISK_TAGS, REWARD_TAGS, VIBE_TAGS
+from library import load_library, find_book
 from upload import router as upload_router
 from score import score_book
-from weights import BUCKET_DISPLAY
+from weights import (
+    BUCKET_DISPLAY,
+    RISK_TAGS, REWARD_TAGS, VIBE_TAGS, ALL_TAGS,
+    RISK_WEIGHTS, REWARD_WEIGHTS,
+    TROPE_LIFTS,
+)
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 CSV_PATH = os.environ.get(
@@ -405,69 +410,242 @@ def _pred5(gr_avg: float, af: dict) -> float:
 
 # ── AI tagging ─────────────────────────────────────────────────────────────────
 
+# JSON template for tagging prompt — built once at module load
+_TROPE_ZERO = {t: 0 for t in TROPE_LIFTS}
+_TAG_TEMPLATE = json.dumps({
+    'R1_Slow': 0, 'R2_Repetitive': 0, 'R3_VibeClash': 0, 'R4_HighConcept': 0,
+    'R5_InaccessibleProse': 0, 'R6_WeakWriting': 0, 'R7_SeriesFatigue': 0,
+    'R8_TooLong': 0, 'R9_ContentWarnings': 0, 'R10_TranslationQuality': 0,
+    'R11_DatedContent': 0,
+    'P1_Distinctive': 0, 'P2_Propulsive': 0, 'P3_Emotional': 0, 'P4_Clever': 0,
+    'P5_Structure': 0, 'P6_Voice': 0, 'P7_Satisfying': 0,
+    'V2_Dark': 0, 'V4_PlotDriven': 0, 'V5_Atmospheric': 0, 'V6_Funny': 0,
+    'V7_Unsettling': 0, 'V8_Philosophical': 0, 'V9_Heartbreaking': 0, 'V10_Cozy': 0,
+    **_TROPE_ZERO,
+    'Critical_Reception': 0, 'G0_Genre': '', 'G1_Subgenre': '',
+})
+
+
 def get_tags(title: str, author: str, pages: int,
              gr_avg: float, author_avg: float) -> dict:
-    """Call Claude to generate v5 R/P/V tags for a book."""
+    """Call Claude to generate v5 R/P/V/T tags for a book."""
     author_avg_str = f"{author_avg:.2f}" if author_avg > 0 else 'not previously read'
 
-    prompt = f"""You are tagging a book for a personalized recommendation model. Return ONLY valid JSON — no preamble, no markdown, no explanation.
+    prompt = f"""You are tagging a book for a personalized recommendation engine. Using the book's description, Goodreads reviews, and any available critical reception data, assess the following book and return a JSON object with these exact fields. No preamble, no explanation — JSON only.
 
 Book: "{title}" by {author}
 Pages: {pages} | Goodreads avg: {gr_avg} | Reader's author avg: {author_avg_str}
 
-RISK TAGS (0/1) — fire when evidence exists; err toward tagging:
-R1_Slow: Pacing genuinely slow or meandering. Fire if reviews mention "slow start", "hard to get into", even if overall rating is high.
-R2_Repetitive: THIS specific book retreads ground from earlier entries. Only fire if reviews of this specific book say it feels repetitive.
-R3a_CharacterDisconnect: Reader won't connect with the protagonist — difficult, unsympathetic, or alienating in ways not redeemed by the end.
-R3b_VibeClash: Tone mismatch — cozy/whimsical when profile is dark/literary, OR explicitly graphic/sexual content that would feel jarring.
-R4_HighConcept: Ambitious premise with uneven or disappointing execution. Fire if reviews say "great idea but...", "didn't deliver", "uneven".
-R5_Dense: Prose is genuinely difficult — experimental, opaque, demanding. NOT just long or literary — only when writing itself is hard to parse.
-R6_WeakWriting: ONLY if Goodreads avg < 3.5 AND reviews explicitly criticize prose, dialogue, or writing quality. NEVER apply to GR 3.5+ books.
-R7_SeriesFatigue: Evidence of quality decline in THIS entry — reviews note it's weaker than earlier books, author stretching the series.
-R8_LowPayoff: Ending or resolution disappoints — readers say the payoff wasn't worth the journey, unsatisfying conclusion.
-R9_UnconvincingRelationship: Central relationship (romantic or otherwise) feels unearned, forced, or underdeveloped.
-R10_UnderdevelopedConcept: Interesting premise not fully explored — surface-level treatment of a rich idea.
-R11_LowSubstance: Entertainment without depth — engaging but leaves nothing behind, forgettable.
-R12_PoorCohesion: Tonally inconsistent or structurally disjointed — doesn't hold together as a unified work.
-R13_EmptyIntensity: Tries to be intense or dramatic but the emotional weight feels manufactured, not earned.
-R14_LowFantasyPayoff: Fantasy/SF elements or world-building don't deliver — magic system, world, or concept underwhelms.
-R15_FlatExecution: Competent but flat — lacks the spark that elevates good craft to something memorable.
+────────────────────────────────────────────────────────────
+RISK TAGS (0 or 1)
+────────────────────────────────────────────────────────────
 
-REWARD TAGS — apply generously when quality is genuinely present:
-P1_Distinctive: +25pts. Unlike most books in its genre — genuinely original. Reserve for books that feel unlike anything else.
-P2_Propulsive: +20pts. Genuinely hard to put down — readers report staying up late, reading in one sitting.
-P3_Emotional: +15pts, GRADED 0/0.5/1.0. 0=not particularly; 0.5=emotionally engaging; 1.0=devastating, lingering, life-changing.
-P4_Clever: +15pts, GRADED 0/0.5/1.0. 0=not applicable; 0.5=some wit or intelligence; 1.0=cleverness is primary and fully pays off.
-P5_Structure: +15pts. Meaningfully unconventional narrative structure that enhances the story.
-P6_Voice: +10pts. Truly singular, unmistakable narrative voice. Reserve for genuinely distinctive voices.
+R1_Slow (weight 0.09):
+  Does the book have genuinely slow or meandering pacing?
+  Look for: reviews mentioning "slow start", "hard to get into", "took 100 pages to hook me", "meandering middle."
+  DO NOT fire on: books that are simply contemplative, atmospheric, or character-driven. Slow ≠ quiet.
 
-VIBE TAGS (0/1) — for display only, do not affect score:
-V1_Speculative: Speculative premise not full SF/fantasy
-V2_Dark: Heavy, bleak, or disturbing tone
-V3_Romantic: Romance is central to plot or emotional arc
-V4_PlotDriven: Momentum-driven, things keep happening
-V5_Atmospheric: Deep sense of place, world, or mood
-V6_ShortOrStandalone: Standalone or novella-length
+R2_Repetitive (weight 0.11):
+  Is this a sequel where the series is showing diminishing returns or repetitive patterns?
+  Look for: reviews saying "more of the same", "didn't add anything new", "felt like filler."
+  DO NOT fire on: sequels that are well-regarded continuations.
 
-CRITICAL RECEPTION (0–3): 0=no notable coverage, 1=notable critical coverage or buzz, 2=major award shortlist, 3=major award winner
+R3_VibeClash (weight 0.07):
+  Is this a strong genre or tone mismatch for a reader who loves dark, literary, speculative fiction?
+  Fire on: cozy mysteries, self-help, pure contemporary romance with no speculative element, business books.
+  DO NOT fire on: books that are dark, literary, or genre-adjacent even if they also have romance.
 
-GENRE:
-G0_Genre: One of: Fantasy, Science Fiction, Literary Fiction, Historical Fiction, Mystery/Thriller, Romance, Horror, Memoir/Biography, Nonfiction, Young Adult, Graphic Novel, Short Stories
-G1_Subgenre: Specific subgenre (e.g. "Dark Fantasy", "Gothic Horror", "Magical Realism")
+R4_HighConcept (weight 0.13):
+  Is the premise stronger than the execution? Does the book fail to deliver on its central idea?
+  Look for: reviews saying "great concept but...", "premise sounded amazing, execution disappointed", "all setup no payoff."
+  DO NOT fire just because a book is ambitious or high-concept — only fire if execution is the problem.
 
-Return ONLY this JSON with no other text:
-{{"R1_Slow":0,"R2_Repetitive":0,"R3a_CharacterDisconnect":0,"R3b_VibeClash":0,"R4_HighConcept":0,"R5_Dense":0,"R6_WeakWriting":0,"R7_SeriesFatigue":0,"R8_LowPayoff":0,"R9_UnconvincingRelationship":0,"R10_UnderdevelopedConcept":0,"R11_LowSubstance":0,"R12_PoorCohesion":0,"R13_EmptyIntensity":0,"R14_LowFantasyPayoff":0,"R15_FlatExecution":0,"P1_Distinctive":0,"P2_Propulsive":0,"P3_Emotional":0,"P4_Clever":0,"P5_Structure":0,"P6_Voice":0,"V1_Speculative":0,"V2_Dark":0,"V3_Romantic":0,"V4_PlotDriven":0,"V5_Atmospheric":0,"V6_ShortOrStandalone":0,"Critical_Reception":0,"G0_Genre":"","G1_Subgenre":""}}"""
+R5_InaccessibleProse (weight 0.07):
+  Is the prose genuinely difficult, dense, or inaccessible — requiring active effort to parse?
+  Look for: translated experimental literary fiction, stream of consciousness, deliberately challenging syntax.
+  DO NOT fire on: lyrical, ornate, or literary prose that is beautiful but readable.
+
+R6_WeakWriting (weight 0.23):
+  IMPORTANT: This tag is about prose quality, NOT crowd reception. A low Goodreads rating alone
+  is NOT sufficient to fire this tag. Many niche, polarizing, or underseen books have low ratings
+  but strong prose.
+  Fire ONLY when there is direct evidence of weak prose:
+    - Multiple reviews specifically citing flat, serviceable, or forgettable writing
+    - Reviews saying "the writing let it down", "prose was pedestrian", "couldn't connect to the voice"
+    - The writing itself (not the plot or concept) is the primary complaint
+  DO NOT fire on:
+    - Books with low Goodreads averages that lack prose complaints
+    - Books where the concept/plot is divisive but the writing is praised
+    - Books where this reader's author avg is high (they've read the author and liked them)
+    - Polarizing books where some readers love and some hate the style
+
+R7_SeriesFatigue (weight 0.12):
+  Is this book 4 or later in a numbered series where earlier books got declining reviews?
+  Look for: series position 4+ AND reviews noting fatigue, repetition, or quality drop.
+  DO NOT fire if: the series is consistently well-regarded through this entry, or this is a standalone in a shared world.
+
+R8_TooLong (weight 0.00 — tag only, not scored yet):
+  Is the book significantly longer than its genre peers AND reviews cite bloat or pacing issues due to length?
+  DO NOT fire just because a book is long if the length is justified.
+
+R9_ContentWarnings (weight 0.00 — tag only, not scored yet):
+  Does the book contain heavy content that commonly requires trigger warnings?
+  (e.g., graphic violence, sexual assault, child abuse, suicide depicted in detail)
+  This is about content presence, not tone. A dark atmospheric book with no graphic content = 0.
+
+R10_TranslationQuality (weight 0.00 — tag only, not scored yet):
+  Is this a translated work where the translation quality is specifically cited as a problem?
+  DO NOT fire just because a book is translated — only if translation is a cited issue.
+
+R11_DatedContent (weight 0.00 — tag only, not scored yet):
+  Does the book contain attitudes, representations, or cultural content that reviewers flag as
+  significantly dated or problematic in ways that affect the reading experience?
+
+────────────────────────────────────────────────────────────
+REWARD TAGS (0 or 1)
+────────────────────────────────────────────────────────────
+
+P1_Distinctive (weight 0.12):
+  Is this book genuinely original — unlike anything else in its genre?
+  Look for: reviews saying "unlike anything I've read", award recognition for originality,
+  a truly unusual premise OR execution that stands out.
+
+P2_Propulsive (weight 0.15):
+  Is the READING EXPERIENCE hard to put down — does it pull you forward?
+  This is about reading momentum, not plot mechanics. A literary novel can be propulsive.
+  Look for: "couldn't stop", "stayed up all night", "devoured it."
+  DO NOT confuse with V4_PlotDriven (plot-structured) — those are different things.
+
+P3_Emotional (weight 0.22):
+  Is the book emotionally resonant — does it stay with you after you finish?
+  Look for: "cried", "devastating", "life-changing", "couldn't stop thinking about it."
+
+P4_Clever (weight 0.10):
+  Did the author do something smart, interesting, or intellectually impressive?
+  This is about authorial intelligence — structural cleverness, thematic depth, subversive choices.
+  NOT the same as funny. Look for: "brilliant", "smart", "subversive", "layered."
+
+P5_Structure (weight 0.08):
+  Does the book use unconventional narrative structure in a way that adds to the experience?
+  (e.g., epistolary, nonlinear, multiple unreliable narrators, frame narrative, second person)
+  DO NOT fire just because there are multiple POVs — structure must be notable.
+
+P6_Voice (weight 0.10):
+  Does the book have a strong, distinctive narrative voice that feels singular and alive?
+  Look for: reviews praising the narrator's personality, close first-person intimacy, a voice
+  you would recognize immediately.
+
+P7_Satisfying (weight 0.23):
+  Does the book deliver a satisfying payoff — does it earn its ending?
+  This is the strongest single reward signal. Look for: "perfect ending", "everything came together",
+  "so satisfying", "stuck the landing." Can apply to tragedy as well as happy endings — satisfying
+  means earned, not necessarily happy.
+  DO NOT fire if reviews frequently cite an unsatisfying, abrupt, or unearned ending.
+
+────────────────────────────────────────────────────────────
+VIBE TAGS (0 or 1 — display only, not scored)
+────────────────────────────────────────────────────────────
+
+V2_Dark: The book has a dark, heavy, or disturbing TONE and atmosphere.
+  This is about mood, not content warnings. DO NOT confuse with R9_ContentWarnings — dark tone ≠ graphic content.
+
+V4_PlotDriven: The book is STRUCTURALLY organized around plot mechanics — mystery, thriller, heist, quest.
+  This is about structure, not pace. DO NOT confuse with P2_Propulsive (reading feel) — those are different axes.
+
+V5_Atmospheric: The setting or world is so vividly rendered it feels like a character itself.
+  Reserve for books where place is central to the experience — not just "well-described."
+
+V6_Funny: The book is genuinely funny — it makes you laugh.
+  NOT the same as P4_Clever. Look for: "laugh out loud", "hilarious", "comedy."
+
+V7_Unsettling: The book creates a sense of unease, dread, or psychological discomfort — even if not horror.
+
+V8_Philosophical: The book engages seriously with philosophical, moral, or existential questions.
+
+V9_Heartbreaking: The book is emotionally devastating — grief, loss, tragedy are central.
+  More specific than P3_Emotional — this is specifically about heartbreak.
+
+V10_Cozy: The book has a warm, comforting, low-stakes tone.
+
+────────────────────────────────────────────────────────────
+GENRE TAGS (display only, not scored)
+────────────────────────────────────────────────────────────
+
+G0_Genre: Primary genre. Use ONLY one of:
+  Fantasy, Science Fiction, Horror, Mystery, Thriller,
+  Historical Fiction, Literary Fiction, Nonfiction, Graphic Novel
+
+G1_Subgenre: Use ONLY values from this list (must match G0):
+  Fantasy: Epic Fantasy, Dark Fantasy, Urban Fantasy, Cozy Fantasy, Romantic Fantasy,
+           Portal Fantasy, Mythic Fantasy, Fairy Tale Retelling, Gaslamp Fantasy,
+           Magical Realism, Speculative
+  Science Fiction: Dystopian, Space Opera, Hard Sci-Fi, Cyberpunk, Biopunk,
+                   Climate Fiction, First Contact, LitRPG/GameLit
+  Horror: Gothic, Psychological Horror, Supernatural Horror, Folk Horror,
+          Body Horror, Creature Horror, Haunted House, Horror Comics, Southern Gothic
+  Mystery: Historical Mystery, Amateur Sleuth, Police Procedural, Cozy Mystery,
+           Crime Noir, Locked Room
+  Thriller: Psychological Thriller, Legal Thriller, Tech Thriller, Historical Thriller,
+            Spy/Espionage, Action/Adventure
+  Historical Fiction: Literary Historical, Ancient World, War Fiction, Historical Romance,
+                      Historical Mystery, Historical Thriller
+  Literary Fiction: Contemporary Literary, Classic Literary, Autofiction, Magical Realism,
+                    Satire, Short Stories, Speculative
+  Nonfiction: Memoir, Memoir Comics, Essays & Narrative, Biography, Popular Science,
+              Literary Criticism, Business/Professional, Food & Travel, Self-Help
+  Graphic Novel: Horror Comics, Memoir Comics
+
+────────────────────────────────────────────────────────────
+TROPE TAGS (0 or 1 — used for display and scoring)
+────────────────────────────────────────────────────────────
+
+Tag 1 if the trope is a significant element of the book, 0 if absent or only incidental.
+
+T_Addiction, T_Age_Gap, T_AI_Robots, T_Amnesia, T_Anti_Hero,
+T_Art_Creativity, T_Band_of_Misfits, T_Boarding_School, T_Books_Libraries,
+T_Chosen_One, T_Class_Society, T_Cold_Case, T_Demons_Angels, T_Dragons,
+T_Fae_Faerie, T_Fake_Dating, T_Fish_Out_of_Water, T_Forced_Proximity,
+T_Found_Family, T_Found_Purpose, T_Frame_Narrative, T_Gods_Mythology,
+T_Grief_Loss, T_Ghosts_Spirits, T_Heist, T_Hidden_Identity, T_Hidden_World,
+T_Identity_Belonging, T_Island_Isolated_Setting, T_Locked_Room, T_Magic_System,
+T_Mental_Health, T_Missing_Person, T_Mentor_Protege, T_Morally_Grey_Protagonist,
+T_Necromancy, T_One_Bed, T_Outsider_POV, T_Parallel_Timelines,
+T_Politics_Revolution, T_Post_Apocalyptic, T_Power_Corruption, T_Prophecy,
+T_Quest_Journey, T_Redemption_Arc, T_Reluctant_Hero, T_Revenge_Plot,
+T_Rivals_to_Lovers, T_Road_Trip, T_Second_Chance_Romance, T_Secret_Society,
+T_Slow_Burn, T_Small_Town, T_Space_Exploration, T_Story_Within_a_Story,
+T_Superpowers, T_Survival, T_Time_Loop, T_Tournament_Competition,
+T_Trauma_Recovery, T_Twist_Ending, T_Underdog, T_Unreliable_Narrator,
+T_Unrequited_Love, T_Vampires, T_Villain_Protagonist, T_War_Aftermath,
+T_Werewolves, T_Witches_Warlocks
+
+────────────────────────────────────────────────────────────
+CRITICAL RECEPTION (integer 0–3)
+────────────────────────────────────────────────────────────
+
+0 = no notable critical recognition
+1 = positive critical reception, notable reviews, best-of lists
+2 = major award shortlist or longlist (Booker, Hugo, Nebula, Pulitzer, National Book, Women's Prize, NBCC, etc.)
+3 = major award winner
+
+────────────────────────────────────────────────────────────
+OUTPUT
+────────────────────────────────────────────────────────────
+
+Return ONLY valid JSON. No preamble, no explanation, no markdown fences.
+
+{_TAG_TEMPLATE}"""
 
     try:
         api_key = os.environ.get('ANTHROPIC_API_KEY', '')
         if not api_key:
             print("ERROR: ANTHROPIC_API_KEY not set")
-            return {t: 0 for t in ALL_TAGS + ['Critical_Reception', 'G0_Genre', 'G1_Subgenre']}
+            return {}
         client = anthropic.Anthropic(api_key=api_key)
         print(f"[TAGS] Calling Claude for: {title} by {author}")
         message = client.messages.create(
             model='claude-sonnet-4-6',
-            max_tokens=800,
+            max_tokens=2048,
             messages=[{'role': 'user', 'content': prompt}]
         )
         raw = message.content[0].text.strip()
@@ -484,28 +662,23 @@ Return ONLY this JSON with no other text:
         import traceback
         print(f"[TAGS] ERROR: {e}")
         print(traceback.format_exc())
-        return {t: 0 for t in ALL_TAGS + ['Critical_Reception', 'G0_Genre', 'G1_Subgenre']}
+        return {}
 
 
 def format_tags(tags: dict) -> dict:
-    """Split flat tags dict into labeled risk/reward/vibe groups."""
+    """Split flat tags dict into labeled risk/reward/vibe groups for the frontend."""
     risk_labels = {
-        'R1_Slow':                     'Slow Pacing',
-        'R2_Repetitive':               'Repetitive',
-        'R3a_CharacterDisconnect':     'Character Disconnect',
-        'R3b_VibeClash':               'Vibe Clash',
-        'R4_HighConcept':              'High Concept Risk',
-        'R5_Dense':                    'Dense Prose',
-        'R6_WeakWriting':              'Weak Writing',
-        'R7_SeriesFatigue':            'Series Fatigue',
-        'R8_LowPayoff':                'Low Payoff',
-        'R9_UnconvincingRelationship': 'Unconvincing Relationship',
-        'R10_UnderdevelopedConcept':   'Underdeveloped Concept',
-        'R11_LowSubstance':            'Low Substance',
-        'R12_PoorCohesion':            'Poor Cohesion',
-        'R13_EmptyIntensity':          'Empty Intensity',
-        'R14_LowFantasyPayoff':        'Low Fantasy Payoff',
-        'R15_FlatExecution':           'Flat Execution',
+        'R1_Slow':              'Slow Pacing',
+        'R2_Repetitive':        'Repetitive',
+        'R3_VibeClash':         'Vibe Clash',
+        'R4_HighConcept':       'High Concept Risk',
+        'R5_InaccessibleProse': 'Inaccessible Prose',
+        'R6_WeakWriting':       'Weak Writing',
+        'R7_SeriesFatigue':     'Series Fatigue',
+        'R8_TooLong':           'Too Long',
+        'R9_ContentWarnings':   'Content Warnings',
+        'R10_TranslationQuality': 'Translation Quality',
+        'R11_DatedContent':     'Dated Content',
     }
     reward_labels = {
         'P1_Distinctive': 'Distinctive',
@@ -514,22 +687,66 @@ def format_tags(tags: dict) -> dict:
         'P4_Clever':      'Clever',
         'P5_Structure':   'Unconventional Structure',
         'P6_Voice':       'Strong Voice',
+        'P7_Satisfying':  'Satisfying Payoff',
     }
     vibe_labels = {
-        'V1_Speculative':      'Speculative',
-        'V2_Dark':             'Dark',
-        'V3_Romantic':         'Romantic',
-        'V4_PlotDriven':       'Plot-Driven',
-        'V5_Atmospheric':      'Atmospheric',
-        'V6_ShortOrStandalone':'Standalone',
+        'V2_Dark':          'Dark',
+        'V4_PlotDriven':    'Plot-Driven',
+        'V5_Atmospheric':   'Atmospheric',
+        'V6_Funny':         'Funny',
+        'V7_Unsettling':    'Unsettling',
+        'V8_Philosophical': 'Philosophical',
+        'V9_Heartbreaking': 'Heartbreaking',
+        'V10_Cozy':         'Cozy',
     }
-    risk_out   = {risk_labels[t]:   float(tags.get(t, 0)) for t in RISK_TAGS   if tags.get(t) and t in risk_labels}
-    reward_out = {reward_labels[t]: float(tags.get(t, 0)) for t in REWARD_TAGS if tags.get(t) and t in reward_labels}
-    vibe_out   = {vibe_labels[t]:   1                     for t in VIBE_TAGS   if tags.get(t) and t in vibe_labels}
+    trope_labels = {
+        'T_Addiction': 'Addiction', 'T_Age_Gap': 'Age Gap',
+        'T_AI_Robots': 'AI & Robots', 'T_Amnesia': 'Amnesia',
+        'T_Anti_Hero': 'Antihero', 'T_Art_Creativity': 'Art & Creativity',
+        'T_Band_of_Misfits': 'Band of Misfits', 'T_Boarding_School': 'Boarding School',
+        'T_Books_Libraries': 'Books & Libraries', 'T_Chosen_One': 'Chosen One',
+        'T_Class_Society': 'Class & Society', 'T_Cold_Case': 'Cold Case',
+        'T_Demons_Angels': 'Demons & Angels', 'T_Dragons': 'Dragons',
+        'T_Fae_Faerie': 'Fae / Faerie', 'T_Fake_Dating': 'Fake Dating',
+        'T_Fish_Out_of_Water': 'Fish Out of Water', 'T_Forced_Proximity': 'Forced Proximity',
+        'T_Found_Family': 'Found Family', 'T_Found_Purpose': 'Finding Purpose',
+        'T_Frame_Narrative': 'Frame Narrative', 'T_Gods_Mythology': 'Gods & Mythology',
+        'T_Grief_Loss': 'Grief & Loss', 'T_Ghosts_Spirits': 'Ghosts & Spirits',
+        'T_Heist': 'Heist', 'T_Hidden_Identity': 'Hidden Identity',
+        'T_Hidden_World': 'Hidden World', 'T_Identity_Belonging': 'Identity & Belonging',
+        'T_Island_Isolated_Setting': 'Isolated Setting', 'T_Locked_Room': 'Locked Room',
+        'T_Magic_System': 'Magic System', 'T_Mental_Health': 'Mental Health',
+        'T_Missing_Person': 'Missing Person', 'T_Mentor_Protege': 'Mentor & Protégé',
+        'T_Morally_Grey_Protagonist': 'Morally Grey Protagonist', 'T_Necromancy': 'Necromancy',
+        'T_One_Bed': 'One Bed', 'T_Outsider_POV': 'Outsider POV',
+        'T_Parallel_Timelines': 'Parallel Timelines', 'T_Politics_Revolution': 'Politics & Revolution',
+        'T_Post_Apocalyptic': 'Post-Apocalyptic', 'T_Power_Corruption': 'Power & Corruption',
+        'T_Prophecy': 'Prophecy', 'T_Quest_Journey': 'Quest / Journey',
+        'T_Redemption_Arc': 'Redemption Arc', 'T_Reluctant_Hero': 'Reluctant Hero',
+        'T_Revenge_Plot': 'Revenge Plot', 'T_Rivals_to_Lovers': 'Rivals to Lovers',
+        'T_Road_Trip': 'Road Trip', 'T_Second_Chance_Romance': 'Second Chance Romance',
+        'T_Secret_Society': 'Secret Society', 'T_Slow_Burn': 'Slow Burn',
+        'T_Small_Town': 'Small Town', 'T_Space_Exploration': 'Space Exploration',
+        'T_Story_Within_a_Story': 'Story Within a Story', 'T_Superpowers': 'Superpowers',
+        'T_Survival': 'Survival', 'T_Time_Loop': 'Time Loop',
+        'T_Tournament_Competition': 'Tournament / Competition', 'T_Trauma_Recovery': 'Trauma & Recovery',
+        'T_Twist_Ending': 'Twist Ending', 'T_Underdog': 'Underdog',
+        'T_Unreliable_Narrator': 'Unreliable Narrator', 'T_Unrequited_Love': 'Unrequited Love',
+        'T_Vampires': 'Vampires', 'T_Villain_Protagonist': 'Villain Protagonist',
+        'T_War_Aftermath': 'War Aftermath', 'T_Werewolves': 'Werewolves',
+        'T_Witches_Warlocks': 'Witches & Warlocks',
+    }
+
+    risk_out   = {risk_labels[t]:   RISK_WEIGHTS.get(t, 0)   for t in risk_labels   if tags.get(t)}
+    reward_out = {reward_labels[t]: REWARD_WEIGHTS.get(t, 0) for t in reward_labels if tags.get(t)}
+    vibe_out   = {vibe_labels[t]:   1                     for t in vibe_labels   if tags.get(t)}
+    trope_out  = {trope_labels[t]:  TROPE_LIFTS.get(t, 0) for t in trope_labels  if tags.get(t)}
+
     return {
         'risk':   risk_out,
         'reward': reward_out,
         'vibe':   vibe_out,
+        'tropes': trope_out,
         'g0':     tags.get('G0_Genre', ''),
         'g1':     tags.get('G1_Subgenre', ''),
     }

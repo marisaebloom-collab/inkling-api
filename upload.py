@@ -29,75 +29,56 @@ from models import AuthorProfile, User, UserBook, UserSettings
 router = APIRouter(prefix='/library', tags=['library'])
 
 # ── Tag catalogue ─────────────────────────────────────────────────────────────
-# Single source of truth for calibration prompts and score.py merging.
+# Mirrors weights.py — keep in sync if tags change.
 
 REWARD_TAGS = [
     'P1_Distinctive', 'P2_Propulsive', 'P3_Emotional', 'P4_Clever',
-    'P5_Structure',   'P6_Voice',      'P7_Lyrical',   'P8_MorallyComplex',
-    'P9_Humor',
+    'P5_Structure',   'P6_Voice',      'P7_Satisfying',
 ]
 
 RISK_TAGS = [
-    'R1_Slow',                 'R2_Repetitive',             'R3a_CharacterDisconnect',
-    'R3b_VibeClash',           'R4_HighConcept',            'R5_Dense',
-    'R6_WeakWriting',          'R7_SeriesFatigue',          'R8_LowPayoff',
-    'R9_UnconvincingRelationship', 'R10_UnderdevelopedConcept', 'R11_LowSubstance',
-    'R12_PoorCohesion',        'R13_EmptyIntensity',        'R14_LowFantasyPayoff',
-    'R15_FlatExecution',       'R16_HeavyWorldBuilding',    'R17_RomanceOverPlot',
-    'R18_DisturbingContent',   'R19_EnsembleOverload',
+    'R1_Slow',    'R2_Repetitive',      'R3_VibeClash',  'R4_HighConcept',
+    'R5_InaccessibleProse', 'R6_WeakWriting', 'R7_SeriesFatigue',
+    'R8_TooLong', 'R9_ContentWarnings', 'R10_TranslationQuality', 'R11_DatedContent',
 ]
 
 _REWARD_DESC = {
-    'P1_Distinctive':    'Feels original and not derivative',
-    'P2_Propulsive':     'Hard to put down, compulsive reading',
-    'P3_Emotional':      'Creates lasting emotional impact',
-    'P4_Clever':         'Smart ideas that feel earned',
-    'P5_Structure':      'Unconventional structure that enhances the story',
-    'P6_Voice':          'Distinct, singular narrative voice',
-    'P7_Lyrical':        'Prose itself is a pleasure — crafted, not dense',
-    'P8_MorallyComplex': 'Ambiguous characters, no clear heroes or villains',
-    'P9_Humor':          'Genuinely funny as a primary element',
+    'P1_Distinctive': 'Feels genuinely original — unlike most books in its genre',
+    'P2_Propulsive':  'Hard to put down, compulsive reading experience',
+    'P3_Emotional':   'Creates lasting emotional impact',
+    'P4_Clever':      'Smart ideas or structure that feel earned',
+    'P5_Structure':   'Unconventional structure that enhances the story',
+    'P6_Voice':       'Distinct, singular narrative voice',
+    'P7_Satisfying':  'Delivers a payoff that feels earned and worth the buildup',
 }
 
 _RISK_DESC = {
-    'R1_Slow':                     'Slow pacing that drags without payoff',
-    'R2_Repetitive':               'Retreads familiar ground from earlier entries',
-    'R3a_CharacterDisconnect':     "Reader won't connect with the protagonists",
-    'R3b_VibeClash':               'Tone mismatch with reader preferences',
-    'R4_HighConcept':              'Ambitious premise with uneven execution',
-    'R5_Dense':                    'Dense prose that slows reading',
-    'R6_WeakWriting':              'Flat prose or dialogue',
-    'R7_SeriesFatigue':            'Quality decline in later series entries',
-    'R8_LowPayoff':                'Unsatisfying ending or resolution',
-    'R9_UnconvincingRelationship': 'Central relationships feel unearned',
-    'R10_UnderdevelopedConcept':   'Interesting premise not fully explored',
-    'R11_LowSubstance':            'Entertaining but leaves nothing behind',
-    'R12_PoorCohesion':            "Tonally inconsistent, doesn't hold together",
-    'R13_EmptyIntensity':          'Drama without emotional weight',
-    'R14_LowFantasyPayoff':        'Fantasy/SF elements or world-building underwhelm',
-    'R15_FlatExecution':           'Competent but lacks the spark to be memorable',
-    'R16_HeavyWorldBuilding':      'Extensive lore or rules that can overwhelm the story',
-    'R17_RomanceOverPlot':         'Romance dominates at the expense of other elements',
-    'R18_DisturbingContent':       'Trauma, violence, or subject matter that is hard to sit with',
-    'R19_EnsembleOverload':        'Too many POVs or characters to track meaningfully',
+    'R1_Slow':                'Slow pacing that drags without payoff',
+    'R2_Repetitive':          'Retreads familiar ground from earlier entries',
+    'R3_VibeClash':           'Tone or characters don\'t connect with the reader',
+    'R4_HighConcept':         'Ambitious premise with uneven execution',
+    'R5_InaccessibleProse':   'Writing feels difficult to engage with or slows you down',
+    'R6_WeakWriting':         'Flat prose or dialogue',
+    'R7_SeriesFatigue':       'Quality decline in later series entries',
+    'R8_TooLong':             'Notably long in a way reviewers cite as a problem',
+    'R9_ContentWarnings':     'Contains disturbing content — violence, trauma, explicit material',
+    'R10_TranslationQuality': 'Translation noted as stilted or creating distance',
+    'R11_DatedContent':       'Content or attitudes feel dated by contemporary standards',
 }
 
-# Default weights — mirrors weights.py; used as the example JSON in the prompt
-# so Claude knows the expected scale for each field.
+# Default weights — mirrors weights.py; used as the example JSON in the prompt.
 _DEFAULT_REWARD_WEIGHTS = {
-    'P1_Distinctive': 0.25, 'P2_Propulsive': 0.20, 'P3_Emotional': 0.15,
-    'P4_Clever':      0.15, 'P5_Structure':  0.15, 'P6_Voice':     0.10,
-    'P7_Lyrical':     0.10, 'P8_MorallyComplex': 0.12, 'P9_Humor': 0.05,
+    'P1_Distinctive': 0.12, 'P2_Propulsive': 0.15, 'P3_Emotional': 0.22,
+    'P4_Clever':      0.10, 'P5_Structure':  0.08, 'P6_Voice':     0.10,
+    'P7_Satisfying':  0.23,
 }
 _DEFAULT_RISK_WEIGHTS = {
-    'R1_Slow': 0.03, 'R2_Repetitive': 0.12, 'R3a_CharacterDisconnect': 0.06,
-    'R3b_VibeClash': 0.10, 'R4_HighConcept': 0.05, 'R5_Dense': 0.12,
-    'R6_WeakWriting': 0.10, 'R7_SeriesFatigue': 0.15, 'R8_LowPayoff': 0.09,
-    'R9_UnconvincingRelationship': 0.09, 'R10_UnderdevelopedConcept': 0.09,
-    'R11_LowSubstance': 0.11, 'R12_PoorCohesion': 0.09, 'R13_EmptyIntensity': 0.08,
-    'R14_LowFantasyPayoff': 0.09, 'R15_FlatExecution': 0.07,
-    'R16_HeavyWorldBuilding': 0.06, 'R17_RomanceOverPlot': 0.08,
-    'R18_DisturbingContent': 0.05, 'R19_EnsembleOverload': 0.07,
+    'R1_Slow':                0.09, 'R2_Repetitive':          0.11,
+    'R3_VibeClash':           0.07, 'R4_HighConcept':         0.13,
+    'R5_InaccessibleProse':   0.07, 'R6_WeakWriting':         0.23,
+    'R7_SeriesFatigue':       0.12, 'R8_TooLong':             0.00,
+    'R9_ContentWarnings':     0.00, 'R10_TranslationQuality': 0.00,
+    'R11_DatedContent':       0.00,
 }
 
 
@@ -191,19 +172,24 @@ def _aggregate_authors(books: list[dict]) -> list[dict]:
 
 # ── Calibration ───────────────────────────────────────────────────────────────
 
-def _get_rated_by_tier(books: list[dict]) -> dict[int, list[dict]]:
-    """Return all rated read books grouped by star rating (1–5)."""
+def _get_rated_by_tier(books: list[dict]) -> tuple[dict[int, list[dict]], list[dict]]:
+    """Return rated books grouped by star rating (1–5) plus a separate DNF list."""
     tiers: dict[int, list[dict]] = {1: [], 2: [], 3: [], 4: [], 5: []}
+    dnfs: list[dict] = []
+
     for b in books:
-        if b.get('shelf') != 'read' or not b.get('user_rating'):
-            continue
-        star = int(b['user_rating'])
-        if star in tiers:
-            tiers[star].append(b)
-    return tiers
+        shelf = b.get('shelf', '')
+        if shelf == 'did-not-finish':
+            dnfs.append(b)
+        elif shelf == 'read' and b.get('user_rating'):
+            star = int(b['user_rating'])
+            if star in tiers:
+                tiers[star].append(b)
+
+    return tiers, dnfs
 
 
-def _build_calibration_prompt(tiers: dict[int, list[dict]]) -> str:
+def _build_calibration_prompt(tiers: dict[int, list[dict]], dnfs: list[dict]) -> str:
     def fmt_tier(books, label):
         if not books:
             return ''
@@ -219,9 +205,10 @@ def _build_calibration_prompt(tiers: dict[int, list[dict]]) -> str:
         fmt_tier(tiers[3], '3★ — Mixed / Fine'),
         fmt_tier(tiers[2], '2★ — Disliked'),
         fmt_tier(tiers[1], '1★ — Strongly disliked'),
+        fmt_tier(dnfs,     'Did Not Finish — abandoned before completing'),
     ]))
 
-    total = sum(len(v) for v in tiers.values())
+    total = sum(len(v) for v in tiers.values()) + len(dnfs)
 
     reward_list = '\n'.join(f'  {k}: {v}' for k, v in _REWARD_DESC.items())
     risk_list   = '\n'.join(f'  {k}: {v}' for k, v in _RISK_DESC.items())
@@ -238,12 +225,13 @@ def _build_calibration_prompt(tiers: dict[int, list[dict]]) -> str:
 COMPLETE RATED READING HISTORY:
 {sections}
 
-The 3★ books are intentionally included — they reveal what is *insufficient* for this reader, not just what they actively disliked.
+The 3★ books are intentionally included — they reveal what is *insufficient* for this reader, not just what they actively disliked. Did Not Finish books are strong negative signals — treat them as books that failed this reader before the halfway point.
 
 REWARD TAGS — set higher weight if this quality strongly predicts a high rating for this reader:
 {reward_list}
 
-RISK TAGS — set higher weight if this quality strongly predicts a low rating for this reader:
+RISK TAGS — set higher weight if this quality strongly predicts a low rating for this reader.
+Note: R8–R11 should be set to 0.00 unless this reader's history shows a clear pattern — these tags have no signal on most readers' data yet:
 {risk_list}
 
 COMPONENT WEIGHTS — how much to weight each base signal (must sum to 1.0):
@@ -251,13 +239,13 @@ COMPONENT WEIGHTS — how much to weight each base signal (must sum to 1.0):
   w_author:   reader's own historical ratings for this author
   w_momentum: how recently the reader has read this author
 
-Analyse the full distribution carefully before assigning weights. Look for consistent patterns across the 5★ books, consistent failure modes across the 1–2★ books, and what separates the 4★ from the 5★. Return ONLY valid JSON matching this structure exactly:
+Analyse the full distribution carefully before assigning weights. Look for consistent patterns across the 5★ books, consistent failure modes across the 1–2★ and DNF books, and what separates the 4★ from the 5★. Return ONLY valid JSON matching this structure exactly:
 {example}"""
 
 
 def _run_calibration(books: list[dict]) -> dict:
     """Call Claude to derive per-user weights from the complete rated library."""
-    tiers = _get_rated_by_tier(books)
+    tiers, dnfs = _get_rated_by_tier(books)
     total_high = len(tiers[4]) + len(tiers[5])
 
     if total_high < 5:
@@ -270,7 +258,7 @@ def _run_calibration(books: list[dict]) -> dict:
     if not api_key:
         raise RuntimeError('ANTHROPIC_API_KEY not configured')
 
-    prompt  = _build_calibration_prompt(tiers)
+    prompt  = _build_calibration_prompt(tiers, dnfs)
     client  = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
         model      = 'claude-opus-4-5',   # Opus for calibration quality

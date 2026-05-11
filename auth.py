@@ -250,10 +250,13 @@ def dev_marisa_token(db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.email == _MARISA_EMAIL).first()
     if not user:
-        user = User(email=_MARISA_EMAIL)
+        user = User(email=_MARISA_EMAIL, library_built=True)
         db.add(user)
         db.commit()
         db.refresh(user)
         _create_default_settings(db, user)
+    elif not user.library_built:
+        user.library_built = True
+        db.commit()
 
     return TokenResponse(access_token=_create_token(user.id))

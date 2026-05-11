@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
-html,body{background:#000;color:#e1e3e2;font-family:'Manrope',sans-serif;height:100%}
+html,body{background:#000;color:#e1e3e2;font-family:'Manrope',sans-serif;height:100%;overflow:hidden}
 .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1}
 
 /* ── Screen management ── */
@@ -30,7 +30,7 @@ background:
   --gold:#df832e;
   --burg:#7a1428;
   --burg-l:#aa2840;
-  --bg-home:linear-gradient(180deg,rgba(55,14,36,.88) 0%,rgba(18,8,16,.96) 18%,rgba(4,3,4,1) 42%);
+  --bg-home:linear-gradient(180deg,rgba(30,8,18,.38) 0%,rgba(5,2,4,.90) 8%,#000 18%);
   --bg-utility:#000;
   --bg-result:#000;
 }
@@ -108,21 +108,23 @@ background:
     #000 !important;
   align-items:center !important;
   justify-content:flex-start !important;
-  padding-top:calc(env(safe-area-inset-top) + 76px) !important;
+  padding-top:calc(env(safe-area-inset-top) + 44px) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
 }
 .onboarding-premium-wrap{
   width:100%;
   max-width:390px;
-  padding:0 28px 44px;
+  padding:0 28px 32px;
   display:flex;
   flex-direction:column;
   align-items:center;
 }
 .onboarding-logo-stage{
   position:relative;
-  width:min(292px, 82vw);
+  width:min(220px, 68vw);
   height:auto;
-  margin:0 auto 18px;
+  margin:0 auto 12px;
   display:flex;
   justify-content:center;
   isolation:isolate;
@@ -175,19 +177,19 @@ background:
   text-align:center;
   line-height:1.62;
   max-width:300px;
-  margin:0 0 28px;
+  margin:0 0 18px;
 }
 .upload-zone-premium{
   width:100%;
   border:1px solid rgba(223,131,46,.18);
   border-radius:28px;
-  padding:28px 20px;
+  padding:20px 20px;
   display:flex;
   flex-direction:column;
   align-items:center;
   gap:8px;
   cursor:pointer;
-  margin-bottom:22px;
+  margin-bottom:14px;
   background:
     linear-gradient(180deg, rgba(176,90,122,.105), rgba(63,13,42,.205)),
     radial-gradient(ellipse 70% 42% at 50% 0%, rgba(223,131,46,.045), transparent 72%);

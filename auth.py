@@ -238,19 +238,22 @@ def dev_register(body: _DevRegisterRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=_create_token(user.id))
 
 
-_MARISA_EMAIL = 'marisa@inkling.app'
+# Stable internal identifier for the dev bypass account — not an email, not an OAuth ID.
+# The account uses no email and falls through to the hardcoded weights.py algorithm.
+_DEV_BYPASS_ID = 'inkling-dev-marisa-bypass'
 
 @router.get('/dev-marisa-token', response_model=TokenResponse, include_in_schema=DEV_MODE)
 def dev_marisa_token(db: Session = Depends(get_db)):
-    """Dev-only: return a JWT for Marisa's account, creating it if it doesn't exist.
-    No credentials required — hardcoded bypass for the 'Use as Marisa' button.
+    """Dev-only: return a JWT for the hardcoded dev account.
+    No email or OAuth credentials — identified by a stable internal marker.
+    Uses the global weights.py algorithm (Marisa's pre-computed lifts).
     """
     if not DEV_MODE:
         raise HTTPException(404, 'Not found')
 
-    user = db.query(User).filter(User.email == _MARISA_EMAIL).first()
+    user = db.query(User).filter(User.google_user_id == _DEV_BYPASS_ID).first()
     if not user:
-        user = User(email=_MARISA_EMAIL, library_built=True)
+        user = User(google_user_id=_DEV_BYPASS_ID, library_built=True)
         db.add(user)
         db.commit()
         db.refresh(user)

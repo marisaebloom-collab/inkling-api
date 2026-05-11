@@ -1091,6 +1091,8 @@ function devRefreshForm() {
 }
 
 async function devLoginAsMarisa() {
+  const errEl = document.getElementById('dev-login-err');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
   try {
     const res = await fetch(`${API_URL}/auth/dev-marisa-token`);
     if (!res.ok) {
@@ -1104,7 +1106,7 @@ async function devLoginAsMarisa() {
     devRefreshForm();
     goTo('home');
   } catch(e) {
-    alert('Could not connect to server.\n\n' + e.message);
+    if (errEl) { errEl.textContent = 'Marisa login failed: ' + e.message; errEl.style.display = 'block'; }
   }
 }
 

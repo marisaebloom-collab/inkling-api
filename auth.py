@@ -225,14 +225,16 @@ def dev_register(body: _DevRegisterRequest, db: Session = Depends(get_db)):
     if not DEV_MODE:
         raise HTTPException(404, 'Not found')
 
-    if db.query(User).filter(User.email == body.email).first():
-        raise HTTPException(400, 'Email already registered')
-
-    user = User(email=body.email, hashed_password=_hash_password(body.password))
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    _create_default_settings(db, user)
+    user = db.query(User).filter(User.email == body.email).first()
+    if user:
+        user.hashed_password = _hash_password(body.password)
+        db.commit()
+    else:
+        user = User(email=body.email, hashed_password=_hash_password(body.password))
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        _create_default_settings(db, user)
     return TokenResponse(access_token=_create_token(user.id))
 
 

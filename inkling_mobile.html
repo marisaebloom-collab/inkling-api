@@ -1068,7 +1068,8 @@ async function doDevRegister() {
     AUTH_TOKEN = data.access_token;
     localStorage.setItem('inkling_token', AUTH_TOKEN);
     localStorage.setItem('inkling_user_email', email);
-    goTo('onboarding-upload');
+    const user = await checkAuth();
+    if (user && user.library_built) { goTo('home'); await renderHomeStrip(); } else { goTo('onboarding-upload'); }
   } catch(e) { errEl.textContent = `Network error: ${e.message}. Make sure you're using the Railway URL, not a local file.`; errEl.style.display = 'block'; }
 }
 

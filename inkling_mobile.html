@@ -1074,7 +1074,7 @@ async function doDevRegister() {
 }
 
 // ── Dev helpers ──
-const _DEV_MARISA_EMAIL = 'marisa@inkling.app';
+const _DEV_MARISA_LABEL = 'dev account (Marisa)';
 
 function devRefreshForm() {
   const userEl   = document.getElementById('dev-current-user');
@@ -1086,11 +1086,13 @@ function devRefreshForm() {
 
   // Reset button only for non-Marisa accounts
   if (resetBtn) {
-    resetBtn.style.display = (loggedIn && email !== _DEV_MARISA_EMAIL) ? 'block' : 'none';
+    resetBtn.style.display = (loggedIn && email !== _DEV_MARISA_LABEL) ? 'block' : 'none';
   }
 }
 
 async function devLoginAsMarisa() {
+  const errEl = document.getElementById('dev-login-err');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
   try {
     const res = await fetch(`${API_URL}/auth/dev-marisa-token`);
     if (!res.ok) {
@@ -1100,11 +1102,11 @@ async function devLoginAsMarisa() {
     const data = await res.json();
     AUTH_TOKEN = data.access_token;
     localStorage.setItem('inkling_token', AUTH_TOKEN);
-    localStorage.setItem('inkling_user_email', _DEV_MARISA_EMAIL);
+    localStorage.setItem('inkling_user_email', _DEV_MARISA_LABEL);
     devRefreshForm();
     goTo('home');
   } catch(e) {
-    alert('Could not connect to server.\n\n' + e.message);
+    if (errEl) { errEl.textContent = 'Marisa login failed: ' + e.message; errEl.style.display = 'block'; }
   }
 }
 

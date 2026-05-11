@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background:#000">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>Inkling</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
@@ -986,10 +985,9 @@ function _splashCrossfadeToLogin() {
     login.style.opacity = '1';
   }));
   setTimeout(()=>{
-    ['position','inset','zIndex','opacity','transition'].forEach(p=>login.style[p]='');
-    login.style.animation = 'none'; // prevent screen-fade-in re-triggering after crossfade
+    ['display','position','inset','zIndex','opacity','transition'].forEach(p=>login.style[p]='');
+    login.style.animation = 'none'; // keep animation suppressed — crossfade already showed it
     login.classList.add('active');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{ login.style.animation = ''; }));
     splash.classList.remove('active');
     splash.style.transition='';
     splash.style.opacity='';
@@ -2048,7 +2046,10 @@ async function renderHomeStrip() {
 function goTo(id){
   clearInterval(loadTimer);
   if(id==='recents_noop') id='recents';
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('active');
+    ['display','position','inset','zIndex','opacity','transition','animation'].forEach(p=>s.style[p]='');
+  });
   const t = document.getElementById(id);
   if(t){t.classList.add('active');window.scrollTo(0,0);}
   if(id==='recents') renderRecents().catch(e=>console.warn('recents error:',e));

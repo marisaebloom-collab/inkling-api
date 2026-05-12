@@ -249,7 +249,7 @@ background:
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script>
 </head>
 <body style="background:#000">
 <div id="err-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;padding:20px;overflow:auto">
@@ -1715,6 +1715,7 @@ let zxingReader = null;
 
 async function startScanner() {
   const video = document.getElementById('scanner-video');
+  if (typeof ZXing === 'undefined') { console.warn('ZXing not loaded yet'); return; }
   try {
     zxingReader = new ZXing.BrowserMultiFormatReader();
     await zxingReader.decodeFromConstraints(

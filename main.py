@@ -636,33 +636,36 @@ Return ONLY valid JSON. No preamble, no explanation, no markdown fences.
 
 {_TAG_TEMPLATE}"""
 
-    try:
-        api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-        if not api_key:
-            print("ERROR: ANTHROPIC_API_KEY not set")
-            return {}
-        client = anthropic.Anthropic(api_key=api_key)
-        print(f"[TAGS] Calling Claude for: {title} by {author}")
-        message = client.messages.create(
-            model='claude-sonnet-4-6',
-            max_tokens=2048,
-            messages=[{'role': 'user', 'content': prompt}]
-        )
-        raw = message.content[0].text.strip()
-        print(f"[TAGS] Raw response ({len(raw)} chars): {raw[:300]}")
-
-        start = raw.find('{')
-        end   = raw.rfind('}') + 1
-        if start == -1 or end == 0:
-            raise ValueError("No JSON in response")
-        parsed = json.loads(raw[start:end])
-        print(f"[TAGS] Parsed {len(parsed)} keys successfully")
-        return parsed
-    except Exception as e:
-        import traceback
-        print(f"[TAGS] ERROR: {e}")
-        print(traceback.format_exc())
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        print("ERROR: ANTHROPIC_API_KEY not set")
         return {}
+    client = anthropic.Anthropic(api_key=api_key)
+
+    for attempt in range(2):
+        try:
+            print(f"[TAGS] Calling Claude for: {title} by {author} (attempt {attempt + 1})")
+            message = client.messages.create(
+                model='claude-sonnet-4-6',
+                max_tokens=2048,
+                messages=[{'role': 'user', 'content': prompt}]
+            )
+            raw = message.content[0].text.strip()
+            print(f"[TAGS] Raw response ({len(raw)} chars): {raw[:300]}")
+
+            start = raw.find('{')
+            end   = raw.rfind('}') + 1
+            if start == -1 or end == 0:
+                raise ValueError("No JSON in response")
+            parsed = json.loads(raw[start:end])
+            print(f"[TAGS] Parsed {len(parsed)} keys successfully")
+            return parsed
+        except Exception as e:
+            import traceback
+            print(f"[TAGS] ERROR (attempt {attempt + 1}): {e}")
+            print(traceback.format_exc())
+
+    return {}
 
 
 def format_tags(tags: dict) -> dict:
@@ -903,6 +906,7 @@ def score_endpoint(
         gr_avg=meta['gr_avg'],
         author_avg=af['author_avg'],
     )
+    tagging_failed = not tags
 
     scored = score_book({
         'pred5':              _pred5(meta['gr_avg'], af),
@@ -917,7 +921,7 @@ def score_endpoint(
 
     return {
         'found_in_library': False,
-        'needs_tagging':    False,
+        'needs_tagging':    tagging_failed,
         'title':            meta['title'],
         'author':           meta['author'],
         'cover_url':        meta['cover_url'],

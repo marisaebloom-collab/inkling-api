@@ -247,6 +247,7 @@ background:
   font-family:'Manrope',sans-serif;
 }
 
+.hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 </head>
@@ -309,12 +310,12 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <!-- ═══ HOME ═══ -->
 <!-- ═══ LOGIN SCREEN ═══ -->
-<div id="login" class="screen" style="background:#000;align-items:center;justify-content:center;position:relative;overflow:hidden">
+<div id="login" class="screen" style="background:#000;align-items:center;justify-content:flex-start;overflow-y:auto;position:relative">
 <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 55% 35% at 0% 0%,rgba(80,18,48,.38) 0%,transparent 65%),radial-gradient(ellipse 55% 35% at 100% 0%,rgba(80,18,48,.38) 0%,transparent 65%),radial-gradient(ellipse 70% 45% at 50% 0%,rgba(60,12,36,.10) 0%,transparent 50%),radial-gradient(ellipse 45% 55% at 0% 100%,rgba(80,18,48,.25) 0%,transparent 55%),radial-gradient(ellipse 45% 55% at 100% 100%,rgba(80,18,48,.25) 0%,transparent 55%)"></div>
 
   <!-- background glow -->
 
-  <div style="width:100%;max-width:380px;padding:0 28px;display:flex;flex-direction:column;align-items:center;gap:0">
+  <div style="width:100%;max-width:380px;padding:calc(env(safe-area-inset-top) + 16px) 28px 28px;display:flex;flex-direction:column;align-items:center;gap:0">
 
     <!-- Logo placeholder + tagline -->
     <div id="login-logo-tap" class="hero-ph" style="flex-shrink:0;margin-bottom:12px;cursor:pointer;-webkit-user-select:none;user-select:none"></div>
@@ -2065,7 +2066,13 @@ function goTo(id){
   if(t){t.classList.add('active');window.scrollTo(0,0);}
   // Show persistent hero only on screens that use it
   const _ph = document.getElementById('persistent-hero');
-  if (_ph) _ph.style.display = (id==='home'||id==='login') ? 'flex' : 'none';
+  if (_ph) {
+    _ph.style.display = (id==='home'||id==='login') ? 'flex' : 'none';
+    if (id==='home'||id==='login') {
+      const _hv = document.getElementById('hero-video');
+      if (_hv) _hv.play().catch(()=>{});
+    }
+  }
   if(id==='recents') renderRecents().catch(e=>console.warn('recents error:',e));
   if(id==='home'){renderHomeStrip().catch(e=>console.warn('homestrip error:',e));}
   if(id==='search'){const i=document.getElementById('search-input');if(i)i.value='';const r=document.getElementById('search-results');if(r)r.innerHTML='';const c=document.getElementById('search-count');if(c)c.textContent='';}

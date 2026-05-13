@@ -514,16 +514,16 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;padding-top:40px;padding-bottom:100px">
     <div style="position:relative;width:76vw;height:calc(76vw * 1.35);max-width:300px;max-height:405px;box-shadow:0 0 0 9999px rgba(0,0,0,.55)">
       <div style="position:absolute;inset:0;border:2px solid rgba(223,131,46,.38);border-radius:12px"></div>
-      <div style="position:absolute;top:-2px;left:-2px;width:28px;height:28px;border-top:3px solid #df832e;border-left:3px solid #df832e;border-radius:10px 0 0 0;box-shadow:0 0 12px rgba(223,131,46,.4)"></div>
-      <div style="position:absolute;top:-2px;right:-2px;width:28px;height:28px;border-top:3px solid #df832e;border-right:3px solid #df832e;border-radius:0 10px 0 0;box-shadow:0 0 12px rgba(223,131,46,.4)"></div>
-      <div style="position:absolute;bottom:-2px;left:-2px;width:28px;height:28px;border-bottom:3px solid #df832e;border-left:3px solid #df832e;border-radius:0 0 0 10px;box-shadow:0 0 12px rgba(223,131,46,.4)"></div>
-      <div style="position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;border-bottom:3px solid #df832e;border-right:3px solid #df832e;border-radius:0 0 10px 0;box-shadow:0 0 12px rgba(223,131,46,.4)"></div>
+      <div style="position:absolute;top:-2px;left:-2px;width:28px;height:28px;border-top:3px solid #df832e;border-left:3px solid #df832e;border-radius:10px 0 0 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;top:-2px;right:-2px;width:28px;height:28px;border-top:3px solid #df832e;border-right:3px solid #df832e;border-radius:0 10px 0 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;bottom:-2px;left:-2px;width:28px;height:28px;border-bottom:3px solid #df832e;border-left:3px solid #df832e;border-radius:0 0 0 10px;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;border-bottom:3px solid #df832e;border-right:3px solid #df832e;border-radius:0 0 10px 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
     </div>
     <p id="identify-hint" style="font-family:Newsreader,serif;font-size:15px;font-style:italic;font-weight:300;color:rgba(223,131,46,.65);margin-top:20px;text-align:center;padding:0 24px">Point your camera at a book cover</p>
   </div>
   <!-- Shutter — below viewfinder, above nav -->
   <div style="position:absolute;bottom:calc(92px + env(safe-area-inset-bottom));left:0;right:0;display:flex;flex-direction:column;align-items:center;z-index:6">
-    <button id="identify-shutter" onclick="captureAndIdentify()" ontouchstart="this.style.boxShadow='0 0 50px rgba(223,131,46,.8)';this.style.transform='scale(.93)'" ontouchend="this.style.boxShadow='0 0 28px rgba(124,48,96,.55)';this.style.transform='scale(1)'" style="width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#5a1f38,#7c3060);box-shadow:0 0 28px rgba(124,48,96,.55);display:flex;align-items:center;justify-content:center;border:3px solid rgba(124,48,96,.3);cursor:pointer;transition:all .15s ease">
+    <button id="identify-shutter" onclick="captureAndIdentify()" ontouchstart="this.style.boxShadow='0 0 50px rgba(223,131,46,.85)';this.style.transform='scale(.90)'" ontouchend="this.style.boxShadow='0 0 32px rgba(124,48,96,.6)';this.style.transform='scale(1)'" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#5a1f38,#7c3060);box-shadow:0 0 32px rgba(124,48,96,.6);display:flex;align-items:center;justify-content:center;border:3px solid rgba(223,131,46,.20);cursor:pointer;transition:all .15s ease">
       <span class="material-symbols-outlined" style="font-size:30px;color:#f0dce4;font-variation-settings:'FILL' 1">camera</span>
     </button>
   </div>
@@ -534,7 +534,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <p id="identify-author" style="font-family:Manrope,sans-serif;font-size:12px;color:rgba(184,120,64,.55);margin:0 0 14px"></p>
     <div style="display:flex;gap:8px">
       <button onclick="stopIdentify();startIdentify();document.getElementById('identify-result').style.display='none';document.getElementById('identify-shutter').disabled=false;document.getElementById('identify-hint').textContent='Point at any book cover'" style="flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(124,48,96,.06),rgba(74,26,56,.10)),rgba(0,0,0,.6);border:1px solid rgba(124,48,96,.15);color:rgba(223,131,46,.5);font-family:Manrope,sans-serif;font-size:12px;font-weight:700;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Retake</button>
-      <button id="identify-score-btn" style="flex:2;padding:12px;border-radius:10px;background:linear-gradient(160deg,rgba(124,48,96,.32) 0%,rgba(20,20,20,1) 100%);border:1px solid rgba(124,48,96,.28);color:#df832e;font-family:Manrope,sans-serif;font-size:13px;font-weight:700;cursor:pointer">Score this book →</button>
+      <button id="identify-score-btn" style="flex:2;padding:12px;border-radius:10px;background:linear-gradient(135deg,#7c3060 0%,#a03878 100%);border:1px solid rgba(124,48,96,.4);color:#df832e;font-family:Manrope,sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 16px rgba(124,48,96,.35)">Score this book →</button>
     </div>
   </div>
   <nav class="bottom-nav" style="position:absolute;bottom:0;left:0;right:0">
@@ -561,10 +561,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;padding-top:56px">
     <div style="position:relative;width:280px;height:160px;box-shadow:0 0 0 9999px rgba(0,0,0,.6)">
       <div style="position:absolute;inset:0;border:2px solid rgba(223,131,46,.58);border-radius:12px;box-shadow:0 0 20px rgba(223,131,46,.22),inset 0 0 12px rgba(223,131,46,.12)"></div>
-      <div style="position:absolute;top:-2px;left:-2px;width:24px;height:24px;border-top:4px solid #df832e;border-left:4px solid #df832e;border-radius:10px 0 0 0"></div>
-      <div style="position:absolute;top:-2px;right:-2px;width:24px;height:24px;border-top:4px solid #df832e;border-right:4px solid #df832e;border-radius:0 10px 0 0"></div>
-      <div style="position:absolute;bottom:-2px;left:-2px;width:24px;height:24px;border-bottom:4px solid #df832e;border-left:4px solid #df832e;border-radius:0 0 0 10px"></div>
-      <div style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-bottom:4px solid #df832e;border-right:4px solid #df832e;border-radius:0 0 10px 0"></div>
+      <div style="position:absolute;top:-2px;left:-2px;width:24px;height:24px;border-top:4px solid #df832e;border-left:4px solid #df832e;border-radius:10px 0 0 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;top:-2px;right:-2px;width:24px;height:24px;border-top:4px solid #df832e;border-right:4px solid #df832e;border-radius:0 10px 0 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;bottom:-2px;left:-2px;width:24px;height:24px;border-bottom:4px solid #df832e;border-left:4px solid #df832e;border-radius:0 0 0 10px;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
+      <div style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-bottom:4px solid #df832e;border-right:4px solid #df832e;border-radius:0 0 10px 0;filter:drop-shadow(0 0 7px rgba(223,131,46,.75))"></div>
       <div class="scan-beam"></div>
     </div>
   </div>
@@ -667,7 +667,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- Reading Identity -->
     <p style="font-family:Manrope,sans-serif;font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(223,131,46,.60);margin:0 0 6px">Reading Identity</p>
     <p style="font-family:Newsreader,serif;font-size:22px;font-style:italic;color:rgba(225,227,226,.92);line-height:1.5;margin:0 0 6px">You are a reader who values <span style="color:#df832e;font-weight:600;text-shadow:0 0 12px rgba(223,131,46,.35)">voice</span> and <span style="color:#df832e;font-weight:600;text-shadow:0 0 12px rgba(223,131,46,.35)">atmosphere</span> above all else.</p>
-    <p style="font-family:Manrope,sans-serif;font-size:11px;color:rgba(184,120,64,.55);margin:0 0 20px">13 years · 520 ratings · 331 authors</p>
+    <p style="font-family:Manrope,sans-serif;font-size:11px;color:#b87840;margin:0 0 20px">13 years · 520 ratings · 331 authors</p>
 
     <div style="border-top:1px solid rgba(124,48,96,.08);margin-bottom:20px"></div>
 
@@ -677,7 +677,7 @@ window.addEventListener('unhandledrejection', function(e) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:600;color:rgba(223,131,46,.95);margin:0">Full Calibration</p>
-          <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">529 rated books · all signals active</p>
+          <p style="font-family:Manrope,sans-serif;font-size:10px;color:#b87840;margin:2px 0 0">529 rated books · all signals active</p>
         </div>
         <span style="font-family:Manrope,sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:rgba(223,131,46,.8);background:rgba(223,131,46,.10);border:1px solid rgba(223,131,46,.22);border-radius:20px;padding:3px 9px">≥ 300 books</span>
       </div>
@@ -761,37 +761,37 @@ window.addEventListener('unhandledrejection', function(e) {
     <div style="display:flex;flex-direction:column;gap:0;margin-bottom:14px;background:linear-gradient(180deg,rgba(124,48,96,.04),rgba(74,26,56,.08)),rgba(0,0,0,.5);border:1px solid rgba(124,48,96,.12);border-radius:12px;overflow:hidden;box-shadow:0 0 20px rgba(223,131,46,.06),0 0 40px rgba(74,26,56,.04)">
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Weak Writing</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:100%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:100%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">Flat, serviceable, or forgettable prose — the dominant risk signal</p>
       </div>
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">High Concept Risk</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:57%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:57%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">Great premise that fails to deliver on its central idea</p>
       </div>
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Series Fatigue</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:52%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:52%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">Book 4+ in a series where earlier entries got declining reviews</p>
       </div>
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Repetitive</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:48%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:48%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">A sequel that retreads familiar ground without adding something new</p>
       </div>
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Slow Pacing</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:39%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:39%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">Genuinely meandering pacing — not just contemplative or quiet</p>
       </div>
       <div style="padding:10px 14px;border-bottom:1px solid rgba(124,48,96,.08)">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Inaccessible Prose</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:30%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:30%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">Dense or difficult writing that requires active effort to parse</p>
       </div>
       <div style="padding:10px 14px">
         <p style="font-family:Manrope,sans-serif;font-size:13px;font-weight:500;color:rgba(184,120,64,.85);margin:0">Vibe Clash</p>
-        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:30%;height:100%;background:linear-gradient(90deg,#7c3060,#c45070);border-radius:4px"></div></div>
+        <div style="background:rgba(124,48,96,.08);border-radius:4px;height:5px;margin:6px 0"><div style="width:30%;height:100%;background:linear-gradient(90deg,#4a1a38,#c45070);border-radius:4px"></div></div>
         <p style="font-family:Manrope,sans-serif;font-size:10px;color:rgba(184,120,64,.55);margin:2px 0 0">A strong genre or tone mismatch — cozy, self-help, or pure romance with no dark edge</p>
       </div>
     </div>
@@ -941,6 +941,7 @@ function _splashCrossfadeToLogin() {
     ['display','position','inset','zIndex','opacity','transition'].forEach(p=>login.style[p]='');
     login.style.animation = 'none';
     login.classList.add('active');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ login.style.animation = ''; }));
     splash.classList.remove('active');
     splash.style.transition='';
     splash.style.opacity='';
@@ -2091,7 +2092,7 @@ function _renderRadios(active) {
       el.style.background = 'rgba(223,131,46,.18)';
       el.innerHTML = '<div style="width:9px;height:9px;border-radius:50%;background:#df832e;margin:auto;margin-top:4.5px"></div>';
     } else {
-      el.style.border = '1.5px solid rgba(255,255,255,.22)';
+      el.style.border = '1.5px solid rgba(124,48,96,.30)';
       el.style.background = 'transparent';
       el.innerHTML = '';
     }
@@ -2198,26 +2199,26 @@ function closeUploadHelp() {
 
 <p style="font-family:Manrope,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:rgba(223,131,46,.60);margin-bottom:10px">Account</p>
 <div style="background:linear-gradient(180deg,rgba(124,48,96,.04),rgba(74,26,56,.08)),rgba(0,0,0,.5);border:1px solid rgba(124,48,96,.12);border-radius:12px;overflow:hidden;margin-bottom:14px">
-<div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px">
+<div style="padding:14px 16px;border-bottom:1px solid rgba(124,48,96,.14);display:flex;align-items:center;gap:10px">
 <span id="settings-auth-icon" class="material-symbols-outlined" style="font-size:18px;color:rgba(223,131,46,.40);flex-shrink:0;font-variation-settings:'FILL' 0,'wght' 300">account_circle</span>
-<div><p id="settings-auth-label" style="font-size:13px;font-weight:600;color:rgba(255,255,255,.72);margin:0">Signed in</p><p id="settings-email" style="font-size:11px;color:rgba(184,120,64,.40);margin:3px 0 0">—</p></div>
+<div><p id="settings-auth-label" style="font-size:13px;font-weight:600;color:rgba(240,200,141,.85);margin:0">Signed in</p><p id="settings-email" style="font-size:11px;color:rgba(184,120,64,.40);margin:3px 0 0">—</p></div>
 </div>
-<button onclick="authLogout()" style="width:100%;padding:13px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)"><span class="material-symbols-outlined" style="font-size:18px;color:rgba(184,120,64,.45);flex-shrink:0;font-variation-settings:'FILL' 0,'wght' 300">logout</span><span style="font-size:14px;color:rgba(255,255,255,.62);font-family:'Manrope',sans-serif">Sign Out</span></button>
+<button onclick="authLogout()" style="width:100%;padding:13px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(124,48,96,.14)"><span class="material-symbols-outlined" style="font-size:18px;color:rgba(184,120,64,.45);flex-shrink:0;font-variation-settings:'FILL' 0,'wght' 300">logout</span><span style="font-size:14px;color:rgba(240,200,141,.75);font-family:'Manrope',sans-serif">Sign Out</span></button>
 <button onclick="showDeleteAccountModal()" style="width:100%;padding:13px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px"><span class="material-symbols-outlined" style="font-size:18px;color:rgba(124,48,96,.65);flex-shrink:0;font-variation-settings:'FILL' 0,'wght' 300">delete_forever</span><span style="font-size:14px;color:rgba(124,48,96,.85);font-family:'Manrope',sans-serif">Delete Account</span></button>
 </div>
 
 <p style="font-family:Manrope,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:rgba(223,131,46,.60);margin-bottom:10px">Reference Library</p>
 <div style="background:linear-gradient(180deg,rgba(124,48,96,.04),rgba(74,26,56,.08)),rgba(0,0,0,.5);border:1px solid rgba(124,48,96,.12);border-radius:12px;overflow:hidden;margin-bottom:14px">
-<div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06)"><p id="settings-lib-status" style="font-size:13px;color:rgba(255,255,255,.55);margin:0">No library uploaded yet</p></div>
-<button onclick="updateLibrary()" style="width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left"><span class="material-symbols-outlined" style="font-size:20px;color:rgba(223,131,46,.60);flex-shrink:0;margin-top:1px;font-variation-settings:'FILL' 0,'wght' 300">upload_file</span><div><p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin:0;font-family:'Manrope',sans-serif">Update</p><p style="font-size:11px;color:rgba(184,120,64,.40);margin:3px 0 0;font-family:'Manrope',sans-serif">Upload a new CSV to add books since your last upload</p></div></button>
-<button onclick="showStartFreshModal()" style="width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:flex-start;gap:12px;text-align:left"><span class="material-symbols-outlined" style="font-size:20px;color:rgba(124,48,96,.55);flex-shrink:0;margin-top:1px;font-variation-settings:'FILL' 0,'wght' 300">refresh</span><div><p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.62);margin:0;font-family:'Manrope',sans-serif">Start Fresh</p><p style="font-size:11px;color:rgba(184,120,64,.40);margin:3px 0 0;font-family:'Manrope',sans-serif">Wipe and rebuild your library from a new CSV</p></div></button>
+<div style="padding:14px 16px;border-bottom:1px solid rgba(124,48,96,.12)"><p id="settings-lib-status" style="font-size:13px;color:rgba(184,120,64,.55);margin:0">No library uploaded yet</p></div>
+<button onclick="updateLibrary()" style="width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid rgba(124,48,96,.12);text-align:left"><span class="material-symbols-outlined" style="font-size:20px;color:rgba(223,131,46,.60);flex-shrink:0;margin-top:1px;font-variation-settings:'FILL' 0,'wght' 300">upload_file</span><div><p style="font-size:14px;font-weight:600;color:rgba(240,200,141,.80);margin:0;font-family:'Manrope',sans-serif">Update</p><p style="font-size:11px;color:rgba(184,120,64,.45);margin:3px 0 0;font-family:'Manrope',sans-serif">Upload a new CSV to add books since your last upload</p></div></button>
+<button onclick="showStartFreshModal()" style="width:100%;padding:14px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:flex-start;gap:12px;text-align:left"><span class="material-symbols-outlined" style="font-size:20px;color:rgba(124,48,96,.55);flex-shrink:0;margin-top:1px;font-variation-settings:'FILL' 0,'wght' 300">refresh</span><div><p style="font-size:14px;font-weight:600;color:rgba(240,200,141,.68);margin:0;font-family:'Manrope',sans-serif">Start Fresh</p><p style="font-size:11px;color:rgba(184,120,64,.45);margin:3px 0 0;font-family:'Manrope',sans-serif">Wipe and rebuild your library from a new CSV</p></div></button>
 </div>
 
 <p style="font-family:Manrope,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:rgba(223,131,46,.60);margin-bottom:10px">How Picky Are You?</p>
 <div style="background:linear-gradient(180deg,rgba(124,48,96,.04),rgba(74,26,56,.08)),rgba(0,0,0,.5);border:1px solid rgba(124,48,96,.12);border-radius:12px;overflow:hidden;margin-bottom:28px">
-<button id="pick-btn-picky" onclick="setPickiness('picky')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin:0;font-family:'Manrope',sans-serif">Picky</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You don't settle</p></div><div id="radio-picky" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
-<button id="pick-btn-balanced" onclick="setPickiness('balanced')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin:0;font-family:'Manrope',sans-serif">Balanced</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You keep things measured</p></div><div id="radio-balanced" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
-<button id="pick-btn-bold" onclick="setPickiness('bold')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.75);margin:0;font-family:'Manrope',sans-serif">Bold</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You're willing to take chances</p></div><div id="radio-bold" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
+<button id="pick-btn-picky" onclick="setPickiness('picky')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(240,200,141,.80);margin:0;font-family:'Manrope',sans-serif">Picky</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You don't settle</p></div><div id="radio-picky" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
+<button id="pick-btn-balanced" onclick="setPickiness('balanced')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06)"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(240,200,141,.80);margin:0;font-family:'Manrope',sans-serif">Balanced</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You keep things measured</p></div><div id="radio-balanced" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
+<button id="pick-btn-bold" onclick="setPickiness('bold')" style="width:100%;padding:15px 16px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between"><div style="text-align:left"><p style="font-size:14px;font-weight:600;color:rgba(240,200,141,.80);margin:0;font-family:'Manrope',sans-serif">Bold</p><p style="font-size:11px;color:rgba(184,120,64,.38);margin:3px 0 0;font-family:'Manrope',sans-serif">You're willing to take chances</p></div><div id="radio-bold" style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.22);flex-shrink:0;box-sizing:border-box"></div></button>
 </div>
 
 <div style="text-align:center;padding-bottom:4px">

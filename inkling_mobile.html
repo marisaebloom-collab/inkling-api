@@ -281,6 +281,8 @@ window.addEventListener('unhandledrejection', function(e) {
 
   <div style="width:100%;max-width:380px;padding:calc(env(safe-area-inset-top) + 16px) 28px 28px;display:flex;flex-direction:column;align-items:center;gap:0">
 
+    <!-- Dev bypass label — shown above animation when dev form is open -->
+    <p id="dev-bypass-label" style="display:none;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(223,131,46,.60);text-align:center;margin-bottom:8px">— dev bypass —</p>
     <!-- Logo placeholder + tagline -->
     <div id="login-logo-tap" class="hero-ph" style="flex-shrink:0;margin-bottom:12px;cursor:pointer;-webkit-user-select:none;user-select:none"></div>
     <div style="text-align:center;padding:0 12px 16px">
@@ -304,19 +306,8 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Dev login form (hidden by default, revealed by triple-tap on logo) -->
     <div id="login-dev-form" style="display:none;width:100%;flex-direction:column;gap:10px">
-      <p style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(223,131,46,.60);text-align:center;margin-bottom:2px">— dev bypass —</p>
-
-      <!-- Current user indicator -->
-      <p id="dev-current-user" style="font-size:11px;color:rgba(184,120,64,.55);text-align:center;margin:0"></p>
-
       <!-- Marisa quick-login -->
       <button class="auth-btn auth-btn-primary" onclick="devLoginAsMarisa()">Use as Marisa</button>
-
-      <div style="display:flex;align-items:center;gap:10px;margin:2px 0">
-        <div style="flex:1;height:1px;background:rgba(124,48,96,.18)"></div>
-        <span style="font-size:11px;color:rgba(184,120,64,.30)">or test account</span>
-        <div style="flex:1;height:1px;background:rgba(124,48,96,.18)"></div>
-      </div>
 
       <input id="dev-email" type="email" placeholder="Email" autocomplete="email" class="auth-input"/>
       <input id="dev-password" type="password" placeholder="Password" autocomplete="current-password" class="auth-input"/>
@@ -990,6 +981,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const showing = f.style.display === 'flex';
         f.style.display = showing ? 'none' : 'flex';
         p.style.display = showing ? 'flex' : 'none';
+        const lbl = document.getElementById('dev-bypass-label');
+        if (lbl) lbl.style.display = showing ? 'none' : 'block';
         if (!showing) devRefreshForm();
       }
     }

@@ -2,11 +2,16 @@
 <html lang="en" style="background:#000">
 <head>
 <meta charset="utf-8"/>
+<meta name="color-scheme" content="dark"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>Inkling</title>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
 <style>
+:root{background:#000;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 html,body{background:#000;color:#f5d094;font-family:'Manrope',sans-serif;height:100%;overflow:hidden}
 .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;display:inline-block;line-height:1}
@@ -169,7 +174,7 @@ background:
 .upload-zone-premium #upload-zone-label{
   font-size:14px;
   font-weight:650;
-  color:rgba(240,200,141,.88);
+  color:rgba(223,131,46,.75);
 }
 .upload-zone-premium .upload-help{
   font-size:12px;
@@ -336,18 +341,17 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <div class="hero-ph" style="flex-shrink:0;margin-bottom:10px;height:180px"></div>
 
-    <h1 class="onboarding-title-premium">Create your taste profile</h1>
+    <h1 class="onboarding-title-premium" id="upload-title-tap">Create your taste profile</h1>
     <p class="onboarding-copy-premium">Share the books you've read and rated so Inkling can learn what you love. We recommend at least 100 rated books including a mix of favorites and misses for detailed, accurate predictions.</p>
 
-    <!-- Upload zone -->
-    <div id="upload-zone" class="upload-zone-premium" onclick="document.getElementById('csv-input').click()">
+    <!-- Upload zone — help icon in corner, tap body to pick file -->
+    <div id="upload-zone" class="upload-zone-premium" style="position:relative" onclick="document.getElementById('csv-input').click()">
       <span class="material-symbols-outlined">upload_file</span>
       <p id="upload-zone-label">Upload my reading history</p>
+      <button onclick="showUploadHelp();event.stopPropagation()" style="position:absolute;top:8px;right:10px;background:none;border:none;padding:4px;cursor:pointer;line-height:0">
+        <span class="material-symbols-outlined" style="font-size:16px;color:rgba(223,131,46,.38);font-variation-settings:'FILL' 0,'wght' 300">help_outline</span>
+      </button>
     </div>
-    <button onclick="showUploadHelp()" style="background:none;border:none;padding:0;margin:4px 0 10px;cursor:pointer;font-family:'Manrope',sans-serif;font-size:12px;color:rgba(223,131,46,.55);letter-spacing:.04em;display:flex;align-items:center;gap:5px;align-self:center">
-      <span class="material-symbols-outlined" style="font-size:15px;font-variation-settings:'FILL' 0,'wght' 300">help_outline</span>
-      Need help?
-    </button>
     <input id="csv-input" type="file" accept=".csv" style="display:none" onchange="onCSVSelected(this)"/>
 
     <button id="upload-btn" class="auth-btn auth-btn-primary" style="width:100%;opacity:.4;pointer-events:none" onclick="uploadCSV()">
@@ -356,9 +360,6 @@ window.addEventListener('unhandledrejection', function(e) {
     </button>
 
     <p class="onboarding-privacy-premium">Your raw reading data is never stored.<br>Only aggregated taste signals are kept.</p>
-
-    <!-- Dev bypass -->
-    <button onclick="devSkipLibrary()" class="onboarding-dev-skip">Skip (dev)</button>
 
   </div>
 </div>
@@ -1076,6 +1077,19 @@ async function devLoginAsMarisa() {
     if (errEl) { errEl.textContent = 'Marisa login failed: ' + e.message; errEl.style.display = 'block'; }
   }
 }
+
+// Secret triple-tap on upload title to skip library (dev only)
+let _uploadTitleTaps = 0, _uploadTitleTimer;
+function _onUploadTitleTap() {
+  _uploadTitleTaps++;
+  clearTimeout(_uploadTitleTimer);
+  _uploadTitleTimer = setTimeout(() => { _uploadTitleTaps = 0; }, 700);
+  if (_uploadTitleTaps >= 3) { _uploadTitleTaps = 0; devSkipLibrary(); }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('upload-title-tap');
+  if (el) el.addEventListener('click', _onUploadTitleTap);
+});
 
 async function devResetLibrary() {
   if (!AUTH_TOKEN) { alert('Not logged in.'); return; }

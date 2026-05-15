@@ -213,6 +213,24 @@ background:
 }
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
+
+/* ── Onboarding instructions screen ── */
+.ob-instructions-card{width:100%;border:1px solid rgba(223,131,46,.10);border-radius:16px;padding:14px 16px;background:rgba(124,48,96,.07);margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.ob-instructions-step{font-size:13px;color:rgba(183,168,153,.78);line-height:1.5;margin:0;display:flex;align-items:flex-start;gap:10px}
+.ob-instructions-step strong{color:rgba(223,131,46,.75)}
+.ob-step-num{min-width:20px;height:20px;border-radius:50%;background:rgba(223,131,46,.18);border:1px solid rgba(223,131,46,.28);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:rgba(223,131,46,.80);flex-shrink:0;margin-top:1px}
+.ob-columns-note{width:100%;padding:10px 14px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;margin-bottom:12px}
+.ob-columns-label{font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:rgba(183,168,153,.40);margin:0 0 8px}
+.ob-columns-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;align-items:center}
+.ob-col-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.03em}
+.ob-col-required{background:rgba(223,131,46,.12);border:1px solid rgba(223,131,46,.22);color:rgba(223,131,46,.80)}
+.ob-col-optional{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);color:rgba(183,168,153,.55)}
+
+/* ── Onboarding column confirmation screen ── */
+#onboarding-columns{background:#000;align-items:center;justify-content:flex-start;overflow-y:auto;padding-top:calc(env(safe-area-inset-top) + 24px)}
+
+/* ── Onboarding processing retry button ── */
+.ob-retry-btn{margin-top:16px;background:none;border:1px solid rgba(223,131,46,.25);border-radius:20px;padding:8px 20px;font-size:12px;font-weight:600;color:rgba(223,131,46,.60);cursor:pointer;font-family:'Manrope',sans-serif}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js" defer></script>
 </head>
@@ -328,33 +346,107 @@ window.addEventListener('unhandledrejection', function(e) {
   </div>
 </div>
 
-<!-- ═══ ONBOARDING — UPLOAD ═══ -->
+<!-- ═══ ONBOARDING — WELCOME ═══ -->
+<div id="onboarding-welcome" class="screen premium-onboarding-upload">
+  <div class="onboarding-premium-wrap">
+
+    <div class="hero-ph" style="flex-shrink:0;margin-bottom:16px"></div>
+
+    <h1 class="onboarding-title-premium">Welcome to a better way to choose books</h1>
+    <p class="onboarding-copy-premium">Like a personal librarian who knows your taste by heart, Inkling takes the guesswork out of your TBR.</p>
+
+    <div style="height:20px"></div>
+
+    <button class="auth-btn auth-btn-primary" style="width:100%" onclick="goTo('onboarding-upload')">
+      Start Curating
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING — INSTRUCTIONS / UPLOAD ═══ -->
 <div id="onboarding-upload" class="screen premium-onboarding-upload">
 
   <div class="onboarding-premium-wrap">
 
     <div class="hero-ph" style="flex-shrink:0;margin-bottom:10px"></div>
 
-    <h1 class="onboarding-title-premium" id="upload-title-tap">Create your taste profile</h1>
-    <p class="onboarding-copy-premium">Share the books you've read and rated so Inkling can learn what you love. We recommend at least 100 rated books including a mix of favorites and misses for detailed, accurate predictions.</p>
+    <h1 class="onboarding-title-premium">Share your reading history</h1>
+    <p class="onboarding-copy-premium">Export your Goodreads library and upload it here. Inkling uses your ratings to build your personal taste algorithm.</p>
 
-    <!-- Upload zone — help icon in corner, tap body to pick file -->
-    <div id="upload-zone" class="upload-zone-premium" style="position:relative" onclick="document.getElementById('csv-input').click()">
-      <span class="material-symbols-outlined">upload_file</span>
-      <p id="upload-zone-label">Upload my reading history</p>
-      <button onclick="showUploadHelp();event.stopPropagation()" style="position:absolute;top:8px;right:10px;background:none;border:none;padding:4px;cursor:pointer;line-height:0">
-        <span class="material-symbols-outlined" style="font-size:16px;color:rgba(223,131,46,.38);font-variation-settings:'FILL' 0,'wght' 300">help_outline</span>
-      </button>
+    <!-- Step-by-step instructions -->
+    <div class="ob-instructions-card">
+      <p class="ob-instructions-step"><span class="ob-step-num">1</span><span>Open <strong>goodreads.com → My Books → Tools → Export Library</strong></span></p>
+      <p class="ob-instructions-step"><span class="ob-step-num">2</span><span>Download the CSV file to your device or cloud storage</span></p>
+      <p class="ob-instructions-step"><span class="ob-step-num">3</span><span>Tap the button below and select the file</span></p>
     </div>
-    <input id="csv-input" type="file" accept=".csv" style="display:none" onchange="onCSVSelected(this)"/>
 
-    <button id="upload-btn" class="auth-btn auth-btn-primary" style="width:100%;opacity:.4;pointer-events:none" onclick="uploadCSV()">
-      <span class="material-symbols-outlined" style="font-size:20px;font-variation-settings:'FILL' 0,'wght' 300">auto_awesome</span>
-      Analyze my taste
+    <!-- Required columns reference -->
+    <div class="ob-columns-note">
+      <p class="ob-columns-label">Required columns</p>
+      <p class="ob-columns-chips">
+        <span class="ob-col-chip ob-col-required">Title</span>
+        <span class="ob-col-chip ob-col-required">Author</span>
+        <span class="ob-col-chip ob-col-required">My Rating</span>
+        <span class="ob-col-chip ob-col-required">Exclusive Shelf</span>
+      </p>
+      <p class="ob-columns-chips">
+        <span class="ob-col-chip ob-col-optional">Date Read</span>
+        <span class="ob-col-chip ob-col-optional">ISBN</span>
+        <span style="font-size:10px;color:rgba(183,168,153,.38)">optional</span>
+      </p>
+      <p style="font-size:11px;color:rgba(183,168,153,.40);margin-top:4px;line-height:1.5">Using a custom CSV? Column names are matched automatically.</p>
+    </div>
+
+    <!-- Error state (hidden by default, shown inline on validation failure) -->
+    <div id="ob-upload-error" style="display:none;width:100%;border:1px solid rgba(170,40,64,.35);border-radius:14px;padding:12px 16px;background:rgba(170,40,64,.07);margin-bottom:8px">
+      <p id="ob-upload-error-msg" style="font-size:13px;color:rgba(255,110,110,.85);text-align:center;line-height:1.5;margin:0"></p>
+    </div>
+
+    <!-- File input (hidden) + CTA -->
+    <input id="csv-input" type="file" accept=".csv,.xlsx,.xls" style="display:none" onchange="onCSVSelected(this)"/>
+    <button class="auth-btn auth-btn-primary" style="width:100%" onclick="document.getElementById('csv-input').click()">
+      <span class="material-symbols-outlined" style="font-size:20px;font-variation-settings:'FILL' 0,'wght' 300">upload_file</span>
+      Share my reading history
     </button>
 
     <p class="onboarding-privacy-premium">Your raw reading data is never stored.<br>Only aggregated taste signals are kept.</p>
 
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING — COLUMN CONFIRMATION ═══ -->
+<div id="onboarding-columns" class="screen" style="background:#000;align-items:center;justify-content:flex-start;overflow-y:auto;padding-top:calc(env(safe-area-inset-top) + 24px)">
+  <div style="width:100%;max-width:390px;padding:0 28px 28px;display:flex;flex-direction:column;align-items:center">
+
+    <h1 class="onboarding-title-premium" style="margin-bottom:6px">One quick check</h1>
+    <p class="onboarding-copy-premium" style="margin-bottom:24px">We found a column that needs confirmation.</p>
+
+    <!-- Confirmation card — populated by JS -->
+    <div style="width:100%;border:1px solid rgba(223,131,46,.18);border-radius:20px;padding:20px;background:linear-gradient(180deg,rgba(176,90,122,.08),rgba(0,0,0,.40));margin-bottom:12px">
+      <p style="font-size:14px;color:rgba(255,255,255,.75);text-align:center;line-height:1.55;margin:0 0 4px">We think <strong id="ob-col-name" style="color:#df832e"></strong> is your <strong id="ob-col-field" style="color:rgba(255,255,255,.90)"></strong>. Does that look right?</p>
+      <p style="font-size:12px;color:rgba(183,168,153,.45);text-align:center;margin:0 0 18px">Sample value: <em id="ob-col-sample-val" style="color:rgba(183,168,153,.65)"></em></p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="auth-btn auth-btn-primary" style="width:100%" onclick="confirmColumn(true)">Yes, that's right</button>
+        <button class="auth-btn auth-btn-ghost" style="width:100%" onclick="showColumnAlternatives()">No, it's something else</button>
+        <button id="ob-col-skip" class="auth-btn auth-btn-ghost" style="width:100%;display:none;opacity:.55" onclick="confirmColumn('skip')">Skip</button>
+      </div>
+    </div>
+
+    <!-- Alternatives list (shown when user taps No) -->
+    <div id="ob-col-alternatives" style="display:none;width:100%;flex-direction:column;gap:8px"></div>
+
+    <p id="ob-col-progress" style="font-size:11px;color:rgba(183,168,153,.32);margin-top:14px;text-align:center"></p>
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING — LIBRARY SIZE CHECK ═══ -->
+<div id="onboarding-library-check" class="screen" style="background:#000;align-items:center;justify-content:center;padding:0 28px">
+  <div style="width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px">
+    <span id="ob-check-icon" class="material-symbols-outlined" style="font-size:52px;color:rgba(223,131,46,.55);font-variation-settings:'FILL' 0,'wght' 300">menu_book</span>
+    <h1 id="ob-check-title" class="onboarding-title-premium" style="font-size:22px;margin:0"></h1>
+    <p id="ob-check-body" class="onboarding-copy-premium" style="margin:0"></p>
+    <div id="ob-check-buttons" style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
   </div>
 </div>
 
@@ -374,7 +466,8 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
 
     <h1 style="font-family:'Newsreader',serif;font-size:26px;font-weight:400;font-style:italic;color:#fff;text-align:center;line-height:1.3;margin-bottom:12px">Building your<br>reading profile…</h1>
-    <p id="ob-processing-phrase" style="font-size:14px;color:rgba(255,255,255,.40);text-align:center;line-height:1.55;min-height:44px;max-width:260px">Analysing your reading history…</p>
+    <p id="ob-processing-phrase" style="font-size:14px;color:rgba(255,255,255,.40);text-align:center;line-height:1.55;min-height:44px;max-width:260px"></p>
+    <button id="ob-processing-retry" class="ob-retry-btn" style="display:none" onclick="openCalibrateStream()">Retry</button>
 
   </div>
 </div>
@@ -904,7 +997,7 @@ async function afterSplash() {
   afterSplash._done = true;
   const user = await checkAuth();
   if (!user) { _splashCrossfadeToLogin(); return; }
-  if (!user.library_built) { goTo('onboarding-upload'); return; }
+  if (!user.library_built) { goTo('onboarding-welcome'); return; }
   goTo('home');
   await renderHomeStrip();
 }
@@ -1002,7 +1095,7 @@ async function doDevLogin() {
     const user = await checkAuth();
     if (!user) { errEl.textContent = 'Login failed — token invalid.'; errEl.style.display = 'block'; return; }
     localStorage.setItem('inkling_user_email', email);
-    if (!user.library_built) { goTo('onboarding-upload'); } else { goTo('home'); await renderHomeStrip(); }
+    if (!user.library_built) { goTo('onboarding-welcome'); } else { goTo('home'); await renderHomeStrip(); }
   } catch(e) { errEl.textContent = `Network error: ${e.message}. Make sure you're using the Railway URL, not a local file.`; errEl.style.display = 'block'; }
 }
 
@@ -1024,7 +1117,7 @@ async function doDevRegister() {
     localStorage.setItem('inkling_token', AUTH_TOKEN);
     localStorage.setItem('inkling_user_email', email);
     const user = await checkAuth();
-    if (user && user.library_built) { goTo('home'); await renderHomeStrip(); } else { goTo('onboarding-upload'); }
+    if (user && user.library_built) { goTo('home'); await renderHomeStrip(); } else { goTo('onboarding-welcome'); }
   } catch(e) { errEl.textContent = `Network error: ${e.message}. Make sure you're using the Railway URL, not a local file.`; errEl.style.display = 'block'; }
 }
 
@@ -1111,77 +1204,239 @@ function googleSignIn() {
 // ── Library CSV upload ──
 let _csvFile = null;
 
-function onCSVSelected(input) {
+// ── Onboarding state ──────────────────────────────────────────────────────────
+let _ob_validate_result = null;
+let _ob_column_map      = {};
+let _ob_ambiguous       = [];
+let _ob_ambiguous_idx   = 0;
+let _calibrateEventSource = null;
+let _calibrateRetryTimer  = null;
+
+// Called immediately when the user selects a file from the native picker.
+// Triggers validation — no separate "Analyze" button.
+async function onCSVSelected(input) {
   _csvFile = input.files[0] || null;
-  const label = document.getElementById('upload-zone-label');
-  const btn   = document.getElementById('upload-btn');
-  if (_csvFile) {
-    label.textContent = _csvFile.name;
-    label.style.color = '#df832e';
-    btn.style.opacity = '1';
-    btn.style.pointerEvents = 'auto';
-  } else {
-    label.textContent = 'Upload my reading history';
-    label.style.color = '';
-    btn.style.opacity = '.4';
-    btn.style.pointerEvents = 'none';
-  }
+  input.value = ''; // reset so re-picking the same file fires onchange again
+  if (!_csvFile) return;
+  await runValidation();
 }
 
-const OB_PHRASES = [
-  'Analysing your reading history…',
-  'Mapping author signals…',
-  'Calibrating taste fingerprint…',
-  'Weighting momentum and depth…',
-  'Building your flavour profile…',
-  'Almost there…',
-];
+// ── Validation ────────────────────────────────────────────────────────────────
 
-let _obPhraseTimer = null;
-
-async function uploadCSV() {
+async function runValidation() {
   if (!_csvFile) return;
+  const errEl = document.getElementById('ob-upload-error');
+  if (errEl) errEl.style.display = 'none';
+
+  const form = new FormData();
+  form.append('file', _csvFile);
+
+  let result;
+  try {
+    const res = await fetch(`${API_URL}/library/validate`, { method: 'POST', body: form });
+    result = await res.json();
+  } catch(e) {
+    showUploadError('Network error — please try again.');
+    return;
+  }
+
+  if (!result.valid) {
+    const MESSAGES = {
+      'wrong_file_type': "This file format isn't supported. Export your Goodreads library as a CSV and try again.",
+      'unreadable':       "We couldn't read that file. Try re-exporting from Goodreads and uploading again.",
+      'no_book_data':     "This file doesn't look like a reading history. Make sure you're uploading your Goodreads library export.",
+      'missing_columns':  "We couldn't find the required columns. Check the instructions above for the expected column names.",
+      'no_read_shelf':    "Your reading history needs to include books you've finished. Make sure your Goodreads export includes your 'read' shelf.",
+    };
+    showUploadError(MESSAGES[result.error_code] || 'Upload failed — please try again.');
+    return;
+  }
+
+  _ob_validate_result = result;
+  _ob_column_map      = result.column_map  || {};
+  _ob_ambiguous       = result.ambiguous   || [];
+  _ob_ambiguous_idx   = 0;
+
+  if (_ob_ambiguous.length > 0) {
+    showColumnConfirmation();
+    return;
+  }
+
+  checkLibrarySize(result.read_count);
+}
+
+function showUploadError(msg) {
+  const errEl = document.getElementById('ob-upload-error');
+  const msgEl = document.getElementById('ob-upload-error-msg');
+  if (msgEl) msgEl.textContent = msg;
+  if (errEl) errEl.style.display = 'block';
+  goTo('onboarding-upload');
+}
+
+// ── Column confirmation ───────────────────────────────────────────────────────
+
+function showColumnConfirmation() {
+  const item = _ob_ambiguous[_ob_ambiguous_idx];
+  if (!item) { checkLibrarySize(_ob_validate_result.read_count); return; }
+
+  const el = (id) => document.getElementById(id);
+  if (el('ob-col-name'))  el('ob-col-name').textContent  = '“' + item.best_guess + '”';
+  if (el('ob-col-field')) el('ob-col-field').textContent = item.field;
+
+  // Show a sample value if available
+  const sampleVal = el('ob-col-sample-val');
+  if (sampleVal) sampleVal.textContent = item.sample || '';
+
+  const isOptional = ['Date Read', 'ISBN'].includes(item.field);
+  const skipBtn = el('ob-col-skip');
+  if (skipBtn) skipBtn.style.display = isOptional ? 'block' : 'none';
+
+  const progressEl = el('ob-col-progress');
+  if (progressEl) progressEl.textContent = (_ob_ambiguous_idx + 1) + ' of ' + _ob_ambiguous.length;
+
+  const altEl = el('ob-col-alternatives');
+  if (altEl) { altEl.innerHTML = ''; altEl.style.display = 'none'; }
+
+  goTo('onboarding-columns');
+}
+
+function confirmColumn(result) {
+  const item = _ob_ambiguous[_ob_ambiguous_idx];
+  if (result === true)     _ob_column_map[item.field] = item.best_guess;
+  // result === 'skip': leave the field unmapped (optional only)
+  // result === false: user tapped "No" — showColumnAlternatives() handles this
+  _ob_ambiguous_idx++;
+  showColumnConfirmation();
+}
+
+function showColumnAlternatives() {
+  const item  = _ob_ambiguous[_ob_ambiguous_idx];
+  const altEl = document.getElementById('ob-col-alternatives');
+  if (!altEl || !item) return;
+  altEl.innerHTML = item.candidates.map(function(c) {
+    return '<button class="auth-btn auth-btn-ghost" style="width:100%;text-align:left;font-size:13px" onclick="selectColumnAlt(\'' + c.replace(/'/g, "\\'") + '\')">' + c + '</button>';
+  }).join('');
+  altEl.style.display = 'flex';
+}
+
+function selectColumnAlt(colName) {
+  const item = _ob_ambiguous[_ob_ambiguous_idx];
+  if (item) _ob_column_map[item.field] = colName;
+  _ob_ambiguous_idx++;
+  showColumnConfirmation();
+}
+
+// ── Library size check ────────────────────────────────────────────────────────
+
+function checkLibrarySize(readCount) {
+  if (readCount >= 100) { proceedToUpload(); return; }
+
+  const el = (id) => document.getElementById(id);
+
+  if (readCount >= 50) {
+    if (el('ob-check-icon'))  { el('ob-check-icon').textContent = 'info'; el('ob-check-icon').style.color = 'rgba(223,131,46,.55)'; }
+    if (el('ob-check-title')) el('ob-check-title').textContent = 'Small library detected';
+    if (el('ob-check-body'))  el('ob-check-body').textContent  =
+      'We found ' + readCount + ' finished books in your library. Inkling is most accurate with 100 or more, but you can proceed now and your profile will improve as you log more reads.';
+    if (el('ob-check-buttons')) el('ob-check-buttons').innerHTML =
+      '<button class="auth-btn auth-btn-primary" style="width:100%" onclick="proceedToUpload()">Proceed anyway</button>' +
+      '<button class="auth-btn auth-btn-ghost"   style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
+  } else {
+    if (el('ob-check-icon'))  { el('ob-check-icon').textContent = 'block'; el('ob-check-icon').style.color = 'rgba(170,40,64,.65)'; }
+    if (el('ob-check-title')) el('ob-check-title').textContent = 'Not enough reads';
+    if (el('ob-check-body'))  el('ob-check-body').textContent  =
+      'We found ' + readCount + ' finished books in your library. Inkling needs at least 50 to build your taste profile. Add more reads to your Goodreads ‘read’ shelf, re-export, and try again.';
+    if (el('ob-check-buttons')) el('ob-check-buttons').innerHTML =
+      '<button class="auth-btn auth-btn-ghost" style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
+  }
+
+  goTo('onboarding-library-check');
+}
+
+// ── Upload + stream ───────────────────────────────────────────────────────────
+
+async function proceedToUpload() {
   goTo('onboarding-processing');
-  // Start phrase rotation
-  let step = 0;
   const phraseEl = document.getElementById('ob-processing-phrase');
-  if (phraseEl) phraseEl.textContent = OB_PHRASES[0];
-  _obPhraseTimer = setInterval(() => {
-    step = (step + 1) % OB_PHRASES.length;
-    if (phraseEl) phraseEl.textContent = OB_PHRASES[step];
-  }, 1800);
+  if (phraseEl) phraseEl.textContent = 'Uploading your library…';
+
+  const form = new FormData();
+  form.append('file', _csvFile);
 
   try {
-    const form = new FormData();
-    form.append('file', _csvFile);
     const res = await fetch(`${API_URL}/library/upload`, {
-      method: 'POST',
+      method:  'POST',
       headers: AUTH_TOKEN ? { 'Authorization': 'Bearer ' + AUTH_TOKEN } : {},
-      body: form
+      body:    form,
     });
-    clearInterval(_obPhraseTimer);
     if (!res.ok) {
-      const d = await res.json().catch(()=>({detail:'Upload failed.'}));
-      goTo('onboarding-upload');
-      alert(d.detail || 'Upload failed — please try again.');
+      const d = await res.json().catch(function() { return { detail: 'Upload failed.' }; });
+      showUploadError(d.detail || 'Upload failed — please try again.');
       return;
     }
-    const data = await res.json();
-    // Populate success screen stats
-    const el = (id) => document.getElementById(id);
-    if (el('ob-stat-books'))   el('ob-stat-books').textContent   = data.books_loaded   ?? '—';
-    if (el('ob-stat-authors')) el('ob-stat-authors').textContent = data.authors_tracked ?? '—';
-    if (el('ob-stat-years'))   el('ob-stat-years').textContent   = data.years_of_reading ?? '—';
-    if (data.taste_summary && el('ob-taste-text')) {
-      el('ob-taste-text').innerHTML = data.taste_summary;
-      el('ob-taste-hint').style.display = 'flex';
-    }
-    goTo('onboarding-success');
   } catch(e) {
-    clearInterval(_obPhraseTimer);
-    goTo('onboarding-upload');
-    alert('Network error — please try again.');
+    showUploadError('Network error — please try again.');
+    return;
   }
+
+  openCalibrateStream();
+}
+
+function openCalibrateStream() {
+  if (_calibrateEventSource) { _calibrateEventSource.close(); _calibrateEventSource = null; }
+  if (_calibrateRetryTimer)  { clearTimeout(_calibrateRetryTimer); _calibrateRetryTimer = null; }
+
+  const phraseEl = document.getElementById('ob-processing-phrase');
+  const retryEl  = document.getElementById('ob-processing-retry');
+  if (retryEl) retryEl.style.display = 'none';
+
+  const url = API_URL + '/library/calibrate-stream?token=' + encodeURIComponent(AUTH_TOKEN || '');
+  _calibrateEventSource = new EventSource(url);
+
+  _calibrateEventSource.onmessage = function(e) {
+    if (phraseEl) phraseEl.textContent = e.data;
+  };
+
+  _calibrateEventSource.addEventListener('done', function(e) {
+    _calibrateEventSource.close();
+    _calibrateEventSource = null;
+    if (_calibrateRetryTimer) { clearTimeout(_calibrateRetryTimer); _calibrateRetryTimer = null; }
+
+    let data = {};
+    try { data = JSON.parse(e.data); } catch(err) {}
+
+    const tasteEl = document.getElementById('ob-taste-text');
+    const hintEl  = document.getElementById('ob-taste-hint');
+    if (data.taste_summary && tasteEl) {
+      tasteEl.innerHTML = data.taste_summary;
+      if (hintEl) hintEl.style.display = 'flex';
+    }
+
+    goTo('onboarding-success');
+  });
+
+  _calibrateEventSource.addEventListener('error', function(e) {
+    // Server-sent error event (not a connection drop)
+    let msg = 'Processing paused — we’ll resume automatically.';
+    try { const d = JSON.parse(e.data || '{}'); if (d.error) msg = d.error; } catch(err) {}
+    if (phraseEl) phraseEl.textContent = msg;
+    _calibrateEventSource.close();
+    _calibrateEventSource = null;
+    _calibrateRetryTimer = setTimeout(openCalibrateStream, 5000);
+  });
+
+  _calibrateEventSource.onerror = function() {
+    // Connection dropped unexpectedly
+    if (!_calibrateEventSource || _calibrateEventSource.readyState === EventSource.CLOSED) {
+      if (phraseEl) phraseEl.textContent = 'Processing paused — we’ll resume automatically.';
+      _calibrateRetryTimer = setTimeout(openCalibrateStream, 5000);
+    }
+  };
+
+  // Show manual retry button if still running after 60s
+  _calibrateRetryTimer = setTimeout(function() {
+    if (retryEl) retryEl.style.display = 'block';
+  }, 60000);
 }
 
 function onboardingDone() {
@@ -1947,7 +2202,7 @@ function verdictShort(verdict) {
   return 'Hard Pass';
 }
 
-async function renderRecents() {
+function renderRecents() {
   try {
   const el = document.getElementById('recents-list');
   if (!el) return;
@@ -2027,13 +2282,13 @@ function goTo(id){
   // Show persistent hero only on screens that use it
   const _ph = document.getElementById('persistent-hero');
   if (_ph) {
-    _ph.style.display = (id==='home'||id==='login'||id==='onboarding-upload') ? 'flex' : 'none';
-    if (id==='home'||id==='login'||id==='onboarding-upload') {
+    _ph.style.display = (id==='home'||id==='login'||id==='onboarding-welcome'||id==='onboarding-upload') ? 'flex' : 'none';
+    if (id==='home'||id==='login'||id==='onboarding-welcome'||id==='onboarding-upload') {
       const _hv = document.getElementById('hero-video');
       if (_hv) _hv.play().catch(()=>{});
     }
   }
-  if(id==='recents') renderRecents().catch(e=>console.warn('recents error:',e));
+  if(id==='recents') renderRecents();
   if(id==='home'){renderHomeStrip().catch(e=>console.warn('homestrip error:',e));}
   if(id==='search'){const i=document.getElementById('search-input');if(i)i.value='';const r=document.getElementById('search-results');if(r)r.innerHTML='';const c=document.getElementById('search-count');if(c)c.textContent='';}
   if(id==='scanner') setTimeout(startScanner, 650);

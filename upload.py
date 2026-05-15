@@ -1,16 +1,15 @@
 """upload.py — Library upload and algorithm calibration router.
 
-Two endpoints:
-  POST /library/upload    — Accept Goodreads CSV, store books in UserBook table.
-  POST /library/calibrate — Analyse stored books via Claude, derive per-user
-                            weights, aggregate AuthorProfile rows, flip
-                            library_built = True.
-
-The two-step split lets the client show a progress screen between upload
-(fast, local) and calibration (slow, Claude API call).
+Endpoints:
+  POST /library/validate          — Pre-check file before upload; detect columns.
+  POST /library/upload            — Accept Goodreads CSV/xlsx, store in UserBook.
+  GET  /library/calibrate-stream  — SSE: run calibration and stream progress messages.
+  POST /library/calibrate         — Blocking calibration (retained as fallback).
+  POST /library/dev-reset         — Dev-only: wipe library back to new-user state.
 """
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
@@ -19,10 +18,13 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 import anthropic
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+import pandas as pd
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from auth import get_current_user
+from auth import ALGORITHM, SECRET_KEY
 from database import get_db
 from models import AuthorProfile, User, UserBook, UserSettings
 
@@ -82,7 +84,143 @@ _DEFAULT_RISK_WEIGHTS = {
 }
 
 
-# ── CSV parsing ───────────────────────────────────────────────────────────────
+# ── Column detection ──────────────────────────────────────────────────────────
+
+# Canonical field → accepted column name variants (case-insensitive, _ == space)
+COLUMN_ALIASES: dict[str, list[str]] = {
+    'Title': [
+        'title', 'book title', 'book_title', 'name', 'book name',
+    ],
+    'Author': [
+        'author', 'author name', 'author_name', 'writer', 'written by', 'by',
+        'author l-f',  # Goodreads "Last, First" variant
+    ],
+    'Exclusive Shelf': [
+        'exclusive shelf', 'exclusive_shelf', 'shelf', 'status',
+        'reading status', 'read status', 'shelf name', 'bookshelves',
+    ],
+    'My Rating': [
+        'my rating', 'my_rating', 'rating', 'stars', 'user rating',
+        'user_rating', 'score', 'my stars',
+    ],
+    'Date Read': [
+        'date read', 'date_read', 'finished', 'date finished',
+        'completed', 'finish date', 'read date',
+    ],
+    'ISBN': [
+        'isbn', 'isbn13', 'isbn_13', 'isbn 13', 'barcode', 'ean',
+    ],
+}
+
+REQUIRED_FIELDS  = ['Title', 'Author', 'Exclusive Shelf', 'My Rating']
+OPTIONAL_FIELDS  = ['Date Read', 'ISBN']
+GOODREADS_EXACT  = {'Title', 'Author', 'Exclusive Shelf', 'My Rating', 'Date Read',
+                    'ISBN', 'ISBN13', 'Author l-f'}
+
+
+def _normalize_col(name: str) -> str:
+    """Lowercase, strip whitespace, collapse underscores → spaces."""
+    return name.strip().lower().replace('_', ' ')
+
+
+def _detect_columns(columns: list[str]) -> tuple[dict[str, str], list[dict]]:
+    """Map file columns to canonical field names.
+
+    Returns:
+        column_map  — { canonical_field: actual_column_name_in_file }
+        ambiguous   — list of { field, candidates, best_guess } for fields that
+                      had multiple matches or only a weak match.
+    """
+    col_set = set(columns)
+
+    # Fast path: standard Goodreads export has exact canonical names.
+    if {'Title', 'Author', 'Exclusive Shelf', 'My Rating'}.issubset(col_set):
+        column_map: dict[str, str] = {}
+        for field in REQUIRED_FIELDS + OPTIONAL_FIELDS:
+            if field in col_set:
+                column_map[field] = field
+        # Also check ISBN13 (Goodreads variant)
+        if 'ISBN13' in col_set and 'ISBN' not in column_map:
+            column_map['ISBN'] = 'ISBN13'
+        if 'Author l-f' in col_set and 'Author' not in column_map:
+            column_map['Author'] = 'Author l-f'
+        return column_map, []
+
+    # Fuzzy path: normalize and match against alias lists.
+    normalized: dict[str, str] = {_normalize_col(c): c for c in columns}
+    column_map = {}
+    ambiguous  = []
+
+    for canonical, aliases in COLUMN_ALIASES.items():
+        matches = [normalized[a] for a in aliases if a in normalized]
+        if len(matches) == 1:
+            column_map[canonical] = matches[0]
+        elif len(matches) > 1:
+            ambiguous.append({
+                'field':      canonical,
+                'candidates': matches,
+                'best_guess': matches[0],
+            })
+        # len 0: no match — will surface as missing required field if applicable
+
+    return column_map, ambiguous
+
+
+# ── File parsing ──────────────────────────────────────────────────────────────
+
+def _read_file_to_df(content: bytes, filename: str) -> pd.DataFrame:
+    """Parse CSV or xlsx file bytes into a DataFrame."""
+    fn = filename.lower()
+    if fn.endswith('.csv'):
+        try:
+            return pd.read_csv(io.BytesIO(content), encoding='utf-8-sig', dtype=str,
+                               keep_default_na=False)
+        except UnicodeDecodeError:
+            return pd.read_csv(io.BytesIO(content), encoding='latin-1', dtype=str,
+                               keep_default_na=False)
+    elif fn.endswith(('.xlsx', '.xls')):
+        return pd.read_excel(io.BytesIO(content), dtype=str)
+    else:
+        raise ValueError(f'Unsupported file type: {filename}')
+
+
+def _df_to_books(df: pd.DataFrame, column_map: dict[str, str]) -> list[dict]:
+    """Convert a DataFrame into normalised book dicts using the column map."""
+    books = []
+    for _, row in df.iterrows():
+        title      = str(row.get(column_map.get('Title', 'Title'), '') or '').strip()
+        author_raw = str(row.get(column_map.get('Author', 'Author'), '') or '').strip()
+        author     = _normalize_author(author_raw)
+        if not title or not author:
+            continue
+
+        shelf = str(row.get(column_map.get('Exclusive Shelf', 'Exclusive Shelf'), '') or '').strip()
+
+        try:
+            rating = float(row.get(column_map.get('My Rating', 'My Rating'), 0) or 0)
+        except (ValueError, TypeError):
+            rating = 0.0
+
+        isbn_col  = column_map.get('ISBN', 'ISBN')
+        date_col  = column_map.get('Date Read', 'Date Read')
+
+        isbn = str(row.get(isbn_col, '') or '').strip().strip('="')
+        isbn = isbn or None
+
+        date_read = _parse_year(str(row.get(date_col, '') or ''))
+
+        books.append({
+            'title':       title,
+            'author':      author,
+            'user_rating': rating if rating > 0 else None,
+            'date_read':   date_read,
+            'isbn':        isbn,
+            'shelf':       shelf,
+        })
+    return books
+
+
+# ── CSV parsing (legacy path — kept for /upload fallback) ────────────────────
 
 def _normalize_author(name: str) -> str:
     """Convert 'Last, First' → 'First Last'; leave 'First Last' unchanged."""
@@ -105,7 +243,7 @@ def _parse_year(date_str: str) -> int | None:
 
 def parse_goodreads_csv(content: bytes) -> list[dict]:
     """Parse a Goodreads export CSV into a list of normalised book dicts."""
-    text   = content.decode('utf-8-sig')          # strip UTF-8 BOM if present
+    text   = content.decode('utf-8-sig')
     reader = csv.DictReader(io.StringIO(text))
     books  = []
 
@@ -124,7 +262,7 @@ def parse_goodreads_csv(content: bytes) -> list[dict]:
         isbn = (
             (row.get('ISBN13') or row.get('ISBN') or '')
             .strip()
-            .strip('="')          # Goodreads wraps ISBNs in ="..." in some exports
+            .strip('="')
         )
 
         books.append({
@@ -261,7 +399,7 @@ def _run_calibration(books: list[dict]) -> dict:
     prompt  = _build_calibration_prompt(tiers, dnfs)
     client  = anthropic.Anthropic(api_key=api_key)
     message = client.messages.create(
-        model      = 'claude-opus-4-5',   # Opus for calibration quality
+        model      = 'claude-opus-4-5',
         max_tokens = 2048,
         messages   = [{'role': 'user', 'content': prompt}],
     )
@@ -274,7 +412,6 @@ def _run_calibration(books: list[dict]) -> dict:
 
     weights = json.loads(raw[start:end])
 
-    # Validate required top-level keys
     for key in ('component_weights', 'reward_weights', 'risk_weights', 'taste_summary'):
         if key not in weights:
             raise ValueError(f'Calibration response missing key: {key}')
@@ -282,19 +419,152 @@ def _run_calibration(books: list[dict]) -> dict:
     return weights
 
 
+def _store_calibration_results(user_id: int, book_dicts: list[dict],
+                                weights: dict, db: Session) -> list[dict]:
+    """Write AuthorProfile rows and UserSettings.algorithm_weights; set library_built."""
+    author_rows = _aggregate_authors(book_dicts)
+
+    db.query(AuthorProfile).filter(AuthorProfile.user_id == user_id).delete()
+    db.flush()
+    for a in author_rows:
+        db.add(AuthorProfile(
+            user_id               = user_id,
+            author_name           = a['author_name'],
+            books_read            = a['books_read'],
+            avg_rating            = a['avg_rating'],
+            best_rating           = a['best_rating'],
+            rate_4plus            = a['rate_4plus'],
+            rate_5star            = a['rate_5star'],
+            most_recent_year_read = a['most_recent_year_read'],
+        ))
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user_id).first()
+    if not settings:
+        settings = UserSettings(user_id=user_id)
+        db.add(settings)
+    settings.algorithm_weights = json.dumps(weights)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.library_built = True
+
+    db.commit()
+    return author_rows
+
+
+# ── SSE helper ────────────────────────────────────────────────────────────────
+
+def _sse(data: str, event: str | None = None) -> str:
+    if event:
+        return f'event: {event}\ndata: {data}\n\n'
+    return f'data: {data}\n\n'
+
+
+async def _calibrate_stream_generator(user_id: int, db: Session):
+    """Async generator that streams calibration progress as SSE events."""
+
+    # ── Load books ────────────────────────────────────────────────────────────
+    user_books = db.query(UserBook).filter(UserBook.user_id == user_id).all()
+    if not user_books:
+        yield _sse(json.dumps({'error': 'No books found — upload first'}), event='error')
+        return
+
+    book_dicts = [
+        {
+            'title':       b.title,
+            'author':      b.author,
+            'user_rating': b.user_rating,
+            'date_read':   b.date_read,
+            'shelf':       b.shelf,
+        }
+        for b in user_books
+    ]
+
+    read_books = [b for b in book_dicts if b.get('shelf') == 'read']
+    read_count = len(read_books)
+
+    # ── Pre-calibration messages (real data) ──────────────────────────────────
+    yield _sse(f'Reading your library… {read_count} books found')
+    await asyncio.sleep(1.0)
+
+    author_rows = _aggregate_authors(book_dicts)
+    loved_count = sum(1 for a in author_rows if a['avg_rating'] >= 4.0)
+
+    yield _sse(f'You’ve read {loved_count} authors you consistently love')
+    await asyncio.sleep(1.0)
+
+    yield _sse('Finding your most-read authors…')
+    await asyncio.sleep(0.7)
+
+    top_authors = sorted(author_rows, key=lambda a: a['books_read'], reverse=True)[:2]
+    for a in top_authors:
+        yield _sse(f'{a["author_name"]}: {a["books_read"]} books, avg {a["avg_rating"]}★')
+        await asyncio.sleep(1.2)
+
+    yield _sse('Tagging your top-rated reads first…')
+    await asyncio.sleep(0.8)
+
+    yield _sse('Detecting your taste patterns…')
+    await asyncio.sleep(0.8)
+
+    # ── Start Claude calibration in background thread ─────────────────────────
+    try:
+        calib_task = asyncio.create_task(
+            asyncio.to_thread(_run_calibration, book_dicts)
+        )
+    except ValueError as e:
+        yield _sse(json.dumps({'error': str(e)}), event='error')
+        return
+
+    # Interleave synthetic messages while Claude thinks
+    mid_messages = [
+        'Analyzing your riskier reads…',
+        'Building your personal algorithm…',
+        'Almost there — finalizing your taste profile',
+    ]
+    for msg in mid_messages:
+        if calib_task.done():
+            break
+        yield _sse(msg)
+        await asyncio.sleep(2.5)
+
+    # ── Await calibration result ──────────────────────────────────────────────
+    try:
+        weights = await calib_task
+    except ValueError as e:
+        yield _sse(json.dumps({'error': str(e)}), event='error')
+        return
+    except Exception as e:
+        yield _sse(json.dumps({'error': f'Calibration failed: {e}'}), event='error')
+        return
+
+    if not calib_task.done() or 'Almost there' not in mid_messages[-1]:
+        # Ensure completion message shown if loop exited early
+        yield _sse('Almost there — finalizing your taste profile')
+        await asyncio.sleep(0.8)
+
+    # ── Store results to DB ───────────────────────────────────────────────────
+    try:
+        _store_calibration_results(user_id, book_dicts, weights, db)
+    except Exception as e:
+        yield _sse(json.dumps({'error': f'Failed to save profile: {e}'}), event='error')
+        return
+
+    yield _sse('Your Inkling is ready')
+    await asyncio.sleep(0.5)
+
+    taste = weights.get('taste_summary', '')
+    yield _sse(json.dumps({'taste_summary': taste}), event='done')
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post('/dev-reset', include_in_schema=False)
 def dev_reset_library(
-    current_user: User    = Depends(get_current_user),
+    current_user: User    = Depends(__import__('auth').get_current_user),
     db:           Session = Depends(get_db),
 ):
-    """Dev-only: wipe this user's library and algorithm back to new-user state.
-
-    Clears UserBook rows, AuthorProfile rows, algorithm_weights, and flips
-    library_built = False. Used to re-run the onboarding flow for a test account
-    without deleting the account itself.
-    """
+    """Dev-only: wipe this user's library and algorithm back to new-user state."""
     from auth import DEV_MODE
     if not DEV_MODE:
         raise HTTPException(404, 'Not found')
@@ -312,28 +582,128 @@ def dev_reset_library(
     return {'ok': True, 'message': f'Library reset for {current_user.email}'}
 
 
-@router.post('/upload', status_code=202)
-async def upload_library(
-    file:         UploadFile    = File(...),
-    current_user: User          = Depends(get_current_user),
-    db:           Session       = Depends(get_db),
-):
-    """Accept a Goodreads export CSV and store all books in UserBook.
+@router.post('/validate')
+async def validate_library(file: UploadFile = File(...)):
+    """Pre-check a file before upload. Returns validation result + column detection.
 
-    Does NOT run calibration — call POST /library/calibrate next.
-    Returns counts so the UI can confirm what was received.
+    Does NOT require auth — called before the user has confirmed anything.
+    Does NOT store any data.
     """
-    if not (file.filename or '').lower().endswith('.csv'):
-        raise HTTPException(400, 'File must be a .csv Goodreads export')
+    filename = (file.filename or '').lower()
+
+    # 1. File type check
+    if not any(filename.endswith(ext) for ext in ('.csv', '.xlsx', '.xls')):
+        return {
+            'valid':      False,
+            'error_code': 'wrong_file_type',
+            'read_count': 0,
+        }
 
     content = await file.read()
+
+    # 2. Readability check
     try:
-        books = parse_goodreads_csv(content)
+        df = _read_file_to_df(content, filename)
+    except Exception:
+        return {
+            'valid':      False,
+            'error_code': 'unreadable',
+            'read_count': 0,
+        }
+
+    # 3. Book data present
+    if len(df) == 0:
+        return {
+            'valid':      False,
+            'error_code': 'no_book_data',
+            'read_count': 0,
+        }
+
+    # 4. Column detection
+    column_map, ambiguous = _detect_columns(list(df.columns))
+
+    missing_required = [
+        f for f in REQUIRED_FIELDS
+        if f not in column_map and not any(a['field'] == f for a in ambiguous)
+    ]
+    if missing_required:
+        return {
+            'valid':      False,
+            'error_code': 'missing_columns',
+            'missing':    missing_required,
+            'read_count': 0,
+        }
+
+    # 5. Read-shelf books present
+    shelf_col = column_map.get('Exclusive Shelf')
+    read_count = 0
+    if shelf_col and shelf_col in df.columns:
+        read_count = int((df[shelf_col].astype(str).str.lower() == 'read').sum())
+
+    if read_count == 0:
+        return {
+            'valid':      False,
+            'error_code': 'no_read_shelf',
+            'read_count': 0,
+        }
+
+    return {
+        'valid':      True,
+        'read_count': read_count,
+        'column_map': column_map,
+        'ambiguous':  ambiguous,
+    }
+
+
+@router.post('/upload', status_code=202)
+async def upload_library(
+    file:         UploadFile = File(...),
+    current_user: User       = Depends(__import__('auth').get_current_user),
+    db:           Session    = Depends(get_db),
+):
+    """Accept a Goodreads export CSV/xlsx and store all books in UserBook.
+
+    Does NOT run calibration — open /library/calibrate-stream next.
+    Returns counts so the UI can confirm what was received.
+    """
+    filename = (file.filename or '').lower()
+
+    if not any(filename.endswith(ext) for ext in ('.csv', '.xlsx', '.xls')):
+        raise HTTPException(400, 'File must be a .csv, .xlsx, or .xls export')
+
+    content = await file.read()
+
+    try:
+        df = _read_file_to_df(content, filename)
     except Exception as e:
-        raise HTTPException(400, f'Could not parse CSV: {e}')
+        raise HTTPException(400, f'Could not read file: {e}')
+
+    if len(df) == 0:
+        raise HTTPException(400, 'No books found in file — check the file format')
+
+    column_map, ambiguous = _detect_columns(list(df.columns))
+
+    # If required columns are still ambiguous after auto-detection, we can't proceed.
+    missing_required = [
+        f for f in REQUIRED_FIELDS
+        if f not in column_map and not any(a['field'] == f for a in ambiguous)
+    ]
+    if missing_required:
+        raise HTTPException(
+            400,
+            f'Could not find required columns: {", ".join(missing_required)}. '
+            'Check the instructions for the expected column names.'
+        )
+
+    # Use best-guess for ambiguous columns (user already confirmed via /validate flow).
+    for item in ambiguous:
+        if item['field'] not in column_map:
+            column_map[item['field']] = item['best_guess']
+
+    books = _df_to_books(df, column_map)
 
     if not books:
-        raise HTTPException(400, 'No books found in CSV — check the file format')
+        raise HTTPException(400, 'No valid book records found — check the file format')
 
     # Replace any previous upload for this user
     db.query(UserBook).filter(UserBook.user_id == current_user.id).delete()
@@ -360,23 +730,50 @@ async def upload_library(
         'total_books': len(books),
         'read':        read_count,
         'rated':       rated_count,
-        'next':        'POST /library/calibrate',
+        'next':        'GET /library/calibrate-stream',
     }
+
+
+@router.get('/calibrate-stream')
+async def calibrate_stream(
+    token: str     = Query(..., description='JWT access token (EventSource cannot set headers)'),
+    db:    Session = Depends(get_db),
+):
+    """Stream calibration progress as Server-Sent Events.
+
+    EventSource (used by the client) cannot set Authorization headers, so the
+    JWT is passed as a query parameter instead.
+    """
+    # Validate token manually (can't use get_current_user Depends here)
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get('sub', 0))
+    except (JWTError, ValueError):
+        raise HTTPException(401, 'Invalid or expired token')
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(401, 'User not found')
+
+    return StreamingResponse(
+        _calibrate_stream_generator(user_id, db),
+        media_type='text/event-stream',
+        headers={
+            'Cache-Control':               'no-cache',
+            'X-Accel-Buffering':           'no',   # disable nginx buffering on Railway
+            'Access-Control-Allow-Origin': '*',
+        },
+    )
 
 
 @router.post('/calibrate')
 def calibrate_library(
-    current_user: User    = Depends(get_current_user),
+    current_user: User    = Depends(__import__('auth').get_current_user),
     db:           Session = Depends(get_db),
 ):
-    """Build the user's personalized algorithm from their stored books.
+    """Blocking calibration endpoint — retained as a fallback.
 
-    Steps:
-      1. Pull UserBook rows from DB
-      2. Call Claude → derive per-user component + tag weights
-      3. Aggregate UserBook → AuthorProfile rows
-      4. Store weights on UserSettings
-      5. Flip library_built = True
+    Prefer GET /library/calibrate-stream for the real-time onboarding experience.
     """
     user_books = db.query(UserBook).filter(UserBook.user_id == current_user.id).all()
     if not user_books:
@@ -393,7 +790,6 @@ def calibrate_library(
         for b in user_books
     ]
 
-    # 1. Calibrate
     try:
         weights = _run_calibration(book_dicts)
     except ValueError as e:
@@ -401,33 +797,7 @@ def calibrate_library(
     except Exception as e:
         raise HTTPException(500, f'Calibration failed: {e}')
 
-    # 2. Aggregate → AuthorProfile
-    author_rows = _aggregate_authors(book_dicts)
-    db.query(AuthorProfile).filter(AuthorProfile.user_id == current_user.id).delete()
-    db.flush()
-    for a in author_rows:
-        db.add(AuthorProfile(
-            user_id               = current_user.id,
-            author_name           = a['author_name'],
-            books_read            = a['books_read'],
-            avg_rating            = a['avg_rating'],
-            best_rating           = a['best_rating'],
-            rate_4plus            = a['rate_4plus'],
-            rate_5star            = a['rate_5star'],
-            most_recent_year_read = a['most_recent_year_read'],
-        ))
-
-    # 3. Store weights
-    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
-    if not settings:
-        settings = UserSettings(user_id=current_user.id)
-        db.add(settings)
-    settings.algorithm_weights = json.dumps(weights)
-
-    # 4. Mark library built
-    current_user.library_built = True
-
-    db.commit()
+    author_rows = _store_calibration_results(current_user.id, book_dicts, weights, db)
 
     return {
         'ok':              True,

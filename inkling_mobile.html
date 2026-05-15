@@ -237,8 +237,24 @@ background:
 /* ── Onboarding back button ── */
 .ob-back-btn{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:16px;background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:rgba(223,131,46,.7);z-index:10}
 /* ── Welcome screen overrides ── */
-#onboarding-welcome.premium-onboarding-upload{background:radial-gradient(ellipse 80% 42% at 50% 0%, rgba(124,48,96,.16) 0%, rgba(124,48,96,.055) 36%, rgba(0,0,0,0) 72%),radial-gradient(ellipse 58% 32% at 50% 28%, rgba(176,90,122,.06) 0%, rgba(0,0,0,0) 70%),#000 !important}
+#onboarding-welcome.premium-onboarding-upload{
+  background:
+    radial-gradient(ellipse 80% 42% at 50% 0%, rgba(124,48,96,.16) 0%, rgba(124,48,96,.055) 36%, rgba(0,0,0,0) 72%),
+    radial-gradient(ellipse 58% 32% at 50% 28%, rgba(176,90,122,.06) 0%, rgba(0,0,0,0) 70%),
+    #000 !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  padding-top:calc(env(safe-area-inset-top) + 16px) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
 #onboarding-welcome .auth-btn-primary{background:linear-gradient(180deg,#7c3060 0%,#5b1d43 45%,#3f0d2a 100%) !important;color:#df832e !important;border-radius:28px !important;box-shadow:inset 0 1px 0 rgba(255,230,190,.12),0 10px 30px rgba(176,90,122,.18) !important;text-shadow:0 0 10px rgba(223,131,46,.18)}
+/* ── Onboarding columns screen button overrides ── */
+#onboarding-columns .auth-btn-primary{background:linear-gradient(180deg,#7c3060 0%,#5b1d43 45%,#3f0d2a 100%) !important;color:#df832e !important;border-radius:28px !important;box-shadow:inset 0 1px 0 rgba(255,230,190,.12),0 10px 30px rgba(176,90,122,.18) !important;text-shadow:0 0 10px rgba(223,131,46,.18)}
+#onboarding-columns .auth-btn-ghost{border-radius:28px !important;color:rgba(223,131,46,.60) !important;border-color:rgba(223,131,46,.18) !important}
+/* ── Onboarding default text color (prevent white inheritance) ── */
+.onboarding-premium-wrap,.onboarding-premium-wrap p,.onboarding-premium-wrap h1,.onboarding-premium-wrap span{color:inherit}
+#onboarding-welcome .onboarding-premium-wrap,#onboarding-upload .onboarding-premium-wrap{color:rgba(183,168,153,.78)}
 /* ── Onboarding disclosure toggle ── */
 .ob-disclosure-toggle{background:none;border:none;cursor:pointer;font-size:12px;color:rgba(183,168,153,.45);padding:0;font-family:'Manrope',sans-serif;display:flex;align-items:center;gap:4px;margin-bottom:6px}
 .ob-disclosure-toggle:active{color:rgba(183,168,153,.65)}
@@ -364,6 +380,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <!-- ═══ ONBOARDING — WELCOME ═══ -->
 <div id="onboarding-welcome" class="screen premium-onboarding-upload" style="position:relative">
+  <button class="ob-back-btn" onclick="goTo('login')"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
   <div class="onboarding-premium-wrap">
 
     <div class="hero-ph" style="flex-shrink:0;margin-bottom:8px"></div>
@@ -441,7 +458,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Confirmation card — populated by JS -->
     <div style="width:100%;border:1px solid rgba(223,131,46,.18);border-radius:20px;padding:20px;background:linear-gradient(180deg,rgba(176,90,122,.08),rgba(0,0,0,.40));margin-bottom:12px">
-      <p style="font-size:14px;color:rgba(255,255,255,.75);text-align:center;line-height:1.55;margin:0 0 4px">We think <strong id="ob-col-name" style="color:#df832e"></strong> is your <strong id="ob-col-field" style="color:rgba(255,255,255,.90)"></strong>. Does that look right?</p>
+      <p style="font-size:14px;color:rgba(183,168,153,.78);text-align:center;line-height:1.55;margin:0 0 4px">We think <strong id="ob-col-name" style="color:#df832e"></strong> is your <strong id="ob-col-field" style="color:rgba(183,168,153,.95)"></strong>. Does that look right?</p>
       <p style="font-size:12px;color:rgba(183,168,153,.45);text-align:center;margin:0 0 18px">Sample value: <em id="ob-col-sample-val" style="color:rgba(183,168,153,.65)"></em></p>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="auth-btn auth-btn-primary" style="width:100%" onclick="confirmColumn(true)">Yes, that's right</button>
@@ -483,7 +500,7 @@ window.addEventListener('unhandledrejection', function(e) {
       </div>
     </div>
 
-    <h1 style="font-family:'Newsreader',serif;font-size:26px;font-weight:400;font-style:italic;color:#fff;text-align:center;line-height:1.3;margin-bottom:12px">Building your<br>reading profile…</h1>
+    <h1 style="font-family:'Newsreader',serif;font-size:26px;font-weight:400;font-style:italic;color:rgba(223,131,46,.85);text-align:center;line-height:1.3;margin-bottom:12px">Building your<br>reading profile…</h1>
     <p id="ob-processing-phrase" style="font-size:14px;color:rgba(255,255,255,.40);text-align:center;line-height:1.55;min-height:44px;max-width:260px"></p>
     <button id="ob-processing-retry" class="ob-retry-btn" style="display:none" onclick="openCalibrateStream()">Retry</button>
 

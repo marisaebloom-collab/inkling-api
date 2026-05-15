@@ -2202,7 +2202,7 @@ function verdictShort(verdict) {
   return 'Hard Pass';
 }
 
-async function renderRecents() {
+function renderRecents() {
   try {
   const el = document.getElementById('recents-list');
   if (!el) return;
@@ -2288,7 +2288,7 @@ function goTo(id){
       if (_hv) _hv.play().catch(()=>{});
     }
   }
-  if(id==='recents') renderRecents().catch(e=>console.warn('recents error:',e));
+  if(id==='recents') renderRecents();
   if(id==='home'){renderHomeStrip().catch(e=>console.warn('homestrip error:',e));}
   if(id==='search'){const i=document.getElementById('search-input');if(i)i.value='';const r=document.getElementById('search-results');if(r)r.innerHTML='';const c=document.getElementById('search-count');if(c)c.textContent='';}
   if(id==='scanner') setTimeout(startScanner, 650);

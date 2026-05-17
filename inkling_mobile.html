@@ -1,8 +1,4 @@
-<!DOC
-    <!-- New user link -->
-    <p style="text-align:center;margin-top:16px;font-family:'Manrope',sans-serif;font-size:13px;color:rgba(245,208,148,.45)">
-      New here? <button onclick="goTo('welcome')" style="background:none;border:none;padding:0;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:rgba(245,208,148,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Create an account</button>
-    </p>TYPE html>
+<!DOCTYPE html>
 <html lang="en" style="background:#000">
 <head>
 <meta charset="utf-8"/>
@@ -329,18 +325,18 @@ window.addEventListener('unhandledrejection', function(e) {
 </div>
 
 <!-- ═══ WELCOME ═══ -->
-<div id="welcome" class="screen" style="background:#000;position:relative;overflow:hidden;animation:none">
-  <button class="ob-back-btn" onclick="goTo('login')" aria-label="Back" style="z-index:8"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
+<div id="welcome" class="screen" style="background:#000;position:relative;overflow:hidden">
+  <button class="ob-back-btn" onclick="goTo('login')" aria-label="Back" style="z-index:10;top:calc(env(safe-area-inset-top) + 14px)"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
   <img src="/static/welcome-fog.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
   <img src="/static/welcome-bulb.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2" aria-hidden="true">
-  <div aria-hidden="true" style="position:absolute;top:38%;left:0;right:0;padding:0 36px;text-align:center;z-index:3;pointer-events:none">
-    <h1 style="font-family:'Newsreader',serif;font-size:32px;font-weight:700;line-height:1.2;color:#f5d094;margin:0 0 16px 0">Welcome to a better way to choose books.</h1>
-    <p style="font-family:'Manrope',sans-serif;font-size:14px;font-weight:400;line-height:1.6;color:rgba(245,208,148,.65);margin:0">Like a personal librarian who knows your taste by heart, Inkling takes the guesswork out of your TBR.</p>
+  <div aria-hidden="true" style="position:absolute;top:26%;left:0;right:0;padding:0 48px;text-align:center;z-index:3;pointer-events:none">
+    <h1 style="font-family:'Newsreader',serif;font-size:30px;font-weight:300;line-height:1.3;letter-spacing:.01em;color:#f5d094;margin:0 0 14px 0;-webkit-font-smoothing:antialiased">Welcome to a better way to choose books.</h1>
+    <p style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:400;line-height:1.65;color:rgba(245,208,148,.60);margin:0;-webkit-font-smoothing:antialiased">Like a personal librarian who knows your taste by heart, Inkling takes the guesswork out of your TBR.</p>
   </div>
   <img src="/static/welcome-book.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:4" aria-hidden="true">
-  <img src="/static/welcome-button.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:5" aria-hidden="true">
+  <img src="/static/welcome-button.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:5;opacity:.92" aria-hidden="true">
   <img src="/static/welcome-button-text.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:6" aria-hidden="true">
-  <button onclick="_welcomeToLogin()" aria-label="Start Curating" style="position:absolute;left:7%;right:7%;bottom:3%;height:11%;background:none;border:none;cursor:pointer;z-index:7;-webkit-tap-highlight-color:transparent;outline:none"></button>
+  <button onclick="_welcomeToLogin()" aria-label="Start Curating" style="position:absolute;left:7%;right:7%;bottom:5.5%;height:10%;background:none;border:none;cursor:pointer;z-index:7;-webkit-tap-highlight-color:transparent;outline:none"></button>
 </div>
 
 
@@ -376,10 +372,15 @@ window.addEventListener('unhandledrejection', function(e) {
       </button>
     </div>
 
+    <!-- New user link -->
+    <p style="text-align:center;margin-top:16px;font-family:'Manrope',sans-serif;font-size:13px;color:rgba(245,208,148,.45)">
+      New here? <button onclick="goTo('welcome')" style="background:none;border:none;padding:0;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:rgba(245,208,148,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Create an account</button>
+    </p>
+
     <!-- Dev login form (hidden by default, revealed by triple-tap on logo) -->
     <div id="login-dev-form" style="display:none;width:100%;flex-direction:column;gap:10px;position:relative">
       <span style="position:absolute;top:-6px;left:0;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(183,168,153,.28);pointer-events:none">DEV ONLY</span>
-      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';})()" aria-label="Back"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
+      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';})()" aria-label="Back" style="position:absolute;top:0;right:16px;left:auto"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
       <!-- Marisa quick-login -->
       <button class="auth-btn" style="height:44px;border-radius:10px;background:linear-gradient(160deg,#301623 0%,#080503 100%);border:1px solid rgba(124,48,96,.3);color:#df832e;font-size:13px;font-weight:700;box-shadow:0 2px 14px rgba(0,0,0,.5)" onclick="devLoginAsMarisa()">Use as Marisa</button>
 
@@ -1048,10 +1049,12 @@ async function afterSplash() {
   if (afterSplash._done) return;
   afterSplash._done = true;
   const user = await checkAuth();
-  if (!user) { _splashCrossfadeToLogin(); return; }
-  if (!user.library_built) { goTo('onboarding-welcome'); return; }
-  goTo('home');
-  await renderHomeStrip();
+  if (user && user.library_built) {
+    goTo('home');
+    await renderHomeStrip();
+    return;
+  }
+  _splashCrossfadeToLogin();
 }
 if(window._splashEnded && !afterSplash._done) afterSplash();
 function _splashCrossfadeToLogin() {

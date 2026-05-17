@@ -330,6 +330,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <!-- ═══ WELCOME ═══ -->
 <div id="welcome" class="screen" style="background:#000;position:relative;overflow:hidden;animation:none">
+  <button class="ob-back-btn" onclick="goTo('login')" aria-label="Back" style="z-index:8"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
   <img src="/static/welcome-fog.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
   <img src="/static/welcome-bulb.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2" aria-hidden="true">
   <div aria-hidden="true" style="position:absolute;top:38%;left:0;right:0;padding:0 36px;text-align:center;z-index:3;pointer-events:none">
@@ -402,6 +403,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <!-- ═══ ONBOARDING — WELCOME ═══ -->
 <div id="onboarding-welcome" class="screen premium-onboarding-upload" style="position:relative">
+  <button class="ob-back-btn" onclick="goTo('welcome')" aria-label="Back"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
   <div class="onboarding-premium-wrap">
 
     <div class="hero-ph" style="flex-shrink:0;margin-bottom:8px"></div>

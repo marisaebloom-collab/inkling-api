@@ -12,6 +12,7 @@ import anthropic
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer as _HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
@@ -38,6 +39,7 @@ CSV_PATH = os.environ.get(
 )
 
 app = FastAPI(title='Inkling API', version='2.0')
+app.mount('/static', StaticFiles(directory='static'), name='static')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],

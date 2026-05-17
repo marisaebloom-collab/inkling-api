@@ -379,7 +379,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <!-- Dev login form (hidden by default, revealed by triple-tap on logo) -->
     <div id="login-dev-form" style="display:none;width:100%;flex-direction:column;gap:10px;position:relative">
       <span style="position:absolute;top:-6px;left:0;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(183,168,153,.28);pointer-events:none">DEV ONLY</span>
-      <button onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';})()" style="position:absolute;top:-8px;right:0;background:none;border:none;cursor:pointer;color:rgba(183,168,153,.35);font-size:16px;line-height:1;padding:4px">✕</button>
+      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';})()" aria-label="Back"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
       <!-- Marisa quick-login -->
       <button class="auth-btn" style="height:44px;border-radius:10px;background:linear-gradient(160deg,#301623 0%,#080503 100%);border:1px solid rgba(124,48,96,.3);color:#df832e;font-size:13px;font-weight:700;box-shadow:0 2px 14px rgba(0,0,0,.5)" onclick="devLoginAsMarisa()">Use as Marisa</button>
 

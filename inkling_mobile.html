@@ -234,24 +234,14 @@ background:
 /* ── Onboarding back button ── */
 .ob-back-btn{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:16px;background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;color:rgba(223,131,46,.7);z-index:10}
 /* ── Welcome screen overrides ── */
-#onboarding-welcome.premium-onboarding-upload{
-  background:
-    radial-gradient(ellipse 80% 42% at 50% 0%, rgba(124,48,96,.16) 0%, rgba(124,48,96,.055) 36%, rgba(0,0,0,0) 72%),
-    radial-gradient(ellipse 58% 32% at 50% 28%, rgba(176,90,122,.06) 0%, rgba(0,0,0,0) 70%),
-    #000 !important;
-  align-items:center !important;
-  justify-content:flex-start !important;
-  padding-top:calc(env(safe-area-inset-top) + 16px) !important;
-  overflow-y:auto !important;
-  overflow-x:hidden !important;
-}
-#onboarding-welcome .auth-btn-primary{background:linear-gradient(160deg,rgba(124,48,96,.3) 0%,rgba(8,5,3,1) 100%) !important;border:1px solid rgba(124,48,96,.3) !important;border-radius:10px !important;color:#df832e !important;box-shadow:0 2px 14px rgba(0,0,0,.5) !important;}
+
+
 /* ── Onboarding columns screen button overrides ── */
 #onboarding-columns .auth-btn-primary{background:linear-gradient(180deg,#7c3060 0%,#5b1d43 45%,#3f0d2a 100%) !important;color:#df832e !important;border-radius:28px !important;box-shadow:inset 0 1px 0 rgba(255,230,190,.12),0 10px 30px rgba(176,90,122,.18) !important;text-shadow:0 0 10px rgba(223,131,46,.18)}
 #onboarding-columns .auth-btn-ghost{border-radius:28px !important;color:rgba(223,131,46,.60) !important;border-color:rgba(223,131,46,.18) !important}
 /* ── Onboarding default text color (prevent white inheritance) ── */
 .onboarding-premium-wrap,.onboarding-premium-wrap p,.onboarding-premium-wrap h1,.onboarding-premium-wrap span{color:inherit}
-#onboarding-welcome .onboarding-premium-wrap,#onboarding-upload .onboarding-premium-wrap{color:rgba(183,168,153,.78)}
+#onboarding-upload .onboarding-premium-wrap{color:rgba(183,168,153,.78)}
 /* ── Custom CSV popup modal ── */
 .ob-csv-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:flex-end;justify-content:center}
 .ob-csv-modal-sheet{width:100%;max-width:480px;background:#0f0b09;border:1px solid rgba(124,48,96,.18);border-radius:20px 20px 0 0;padding:20px 24px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
@@ -403,31 +393,9 @@ window.addEventListener('unhandledrejection', function(e) {
 </div>
 
 <!-- ═══ ONBOARDING — WELCOME ═══ -->
-<div id="onboarding-welcome" class="screen premium-onboarding-upload" style="position:relative">
-  <button class="ob-back-btn" onclick="goTo('welcome')" aria-label="Back"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
-  <div class="onboarding-premium-wrap">
-
-    <div class="hero-ph" style="flex-shrink:0;margin-bottom:8px"></div>
-    <div style="text-align:center;padding:0 12px 14px">
-      <p style="font-family:Newsreader,serif;font-size:24px;font-weight:700;font-style:italic;line-height:1.2;color:rgba(223,131,46,.5);margin:0">To read, or not to read?</p>
-      <p style="font-family:Newsreader,serif;font-size:15px;font-weight:400;font-style:italic;color:rgba(223,131,46,.5);margin:0">That is the question.</p>
-    </div>
-
-    <h1 class="onboarding-title-premium">Welcome to a better way to choose books</h1>
-    <p class="onboarding-copy-premium">Like a personal librarian who knows your taste by heart, Inkling takes the guesswork out of your TBR.</p>
-
-    <div style="height:20px"></div>
-
-    <button class="auth-btn auth-btn-primary" style="width:100%" onclick="goTo('onboarding-upload')">
-      Start Curating
-    </button>
-
-  </div>
-</div>
-
 <!-- ═══ ONBOARDING — INSTRUCTIONS / UPLOAD ═══ -->
 <div id="onboarding-upload" class="screen premium-onboarding-upload" style="position:relative">
-  <button class="ob-back-btn" onclick="goTo('onboarding-welcome')"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
+  <button class="ob-back-btn" onclick="goTo('welcome')"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
 
   <div class="onboarding-premium-wrap" style="padding-top:44px">
 
@@ -586,41 +554,41 @@ window.addEventListener('unhandledrejection', function(e) {
 <div id="home" class="screen" style="background:#000;position:relative;overflow:hidden">
   <img src="/static/home-bg.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0" aria-hidden="true">
   <img src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
-  <main style="position:relative;z-index:2;flex:1;overflow-y:auto;display:flex;flex-direction:column;padding-bottom:calc(74px + env(safe-area-inset-bottom));scrollbar-width:none;-webkit-overflow-scrolling:touch">
-    <div style="height:36vh;flex-shrink:0"></div>
-    <div style="text-align:center;padding:0 24px 0">
-      <img src="/static/home-wordmark.png" style="width:48%;display:inline-block" alt="Inkling">
+  <main style="position:relative;z-index:2;flex:1;overflow:hidden;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 calc(68px + env(safe-area-inset-bottom)) 0">
+    <div style="flex:0 0 22vh;min-height:0;flex-shrink:0"></div>
+    <div style="text-align:center;padding:0 24px;flex-shrink:0">
+      <img src="/static/home-wordmark.png" style="width:44%;max-height:48px;object-fit:contain;display:inline-block" alt="Inkling">
     </div>
-    <div style="text-align:center;padding:0 24px 6px">
-      <img src="/static/home-book.png" style="width:56%;display:inline-block" aria-hidden="true">
+    <div style="text-align:center;padding:2px 24px 0;flex-shrink:0">
+      <img src="/static/home-book.png" style="width:52%;max-height:22vh;object-fit:contain;display:inline-block" aria-hidden="true">
     </div>
-    <div style="text-align:center;padding:0 24px 16px">
-      <p style="font-family:'Newsreader',serif;font-size:26px;font-weight:300;font-style:italic;color:#F5D094;margin:0 0 2px;-webkit-font-smoothing:antialiased">To read, or not to read?</p>
-      <p style="font-family:'Newsreader',serif;font-size:17px;font-weight:300;font-style:italic;color:#F5D094;margin:0;-webkit-font-smoothing:antialiased">That is the question.</p>
+    <div style="text-align:center;padding:6px 24px 10px;flex-shrink:0">
+      <p style="font-family:'Newsreader',serif;font-size:24px;font-weight:300;font-style:italic;color:#F5D094;margin:0 0 2px;-webkit-font-smoothing:antialiased">To read, or not to read?</p>
+      <p style="font-family:'Newsreader',serif;font-size:16px;font-weight:300;font-style:italic;color:#F5D094;margin:0;-webkit-font-smoothing:antialiased">That is the question.</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 10px;flex-shrink:0">
       <button onclick="goTo('scanner')" style="background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none" aria-label="Scan a barcode">
-        <img src="/static/home-scan-tile.png" style="width:100%;display:block;border-radius:14px">
+        <img src="/static/home-scan-tile.png" style="width:100%;display:block;border-radius:14px;filter:brightness(0.65) saturate(0.8)">
       </button>
       <button onclick="goTo('identify')" style="background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none" aria-label="Snap a photo">
-        <img src="/static/home-camera-tile.png" style="width:100%;display:block;border-radius:14px">
+        <img src="/static/home-camera-tile.png" style="width:100%;display:block;border-radius:14px;filter:brightness(0.65) saturate(0.8)">
       </button>
     </div>
-    <div style="position:relative;padding:0 20px 16px">
-      <img src="/static/home-search-bar.png" style="width:100%;display:block" aria-hidden="true">
-      <button onclick="goToSearch()" aria-label="Search by title or author" style="position:absolute;inset:0 20px 16px 20px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none"></button>
+    <div style="position:relative;padding:0 20px 10px;flex-shrink:0">
+      <img src="/static/home-search-bar.png" style="width:100%;display:block;filter:brightness(0.7) saturate(0.85)" aria-hidden="true">
+      <button onclick="goToSearch()" aria-label="Search by title or author" style="position:absolute;inset:0 20px 10px 20px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none"></button>
     </div>
-    <div style="padding:0 20px 8px">
-      <h3 style="font-family:'Newsreader',serif;font-size:16px;font-weight:400;font-style:italic;color:#F5D094;margin:0">Recently Searched</h3>
+    <div style="padding:0 20px 6px;flex-shrink:0">
+      <h3 style="font-family:'Newsreader',serif;font-size:14px;font-weight:400;font-style:italic;color:#F5D094;margin:0">Recently Searched</h3>
     </div>
-    <div id="home-recents-strip" style="display:flex;align-items:flex-start;gap:8px;overflow-x:auto;padding:0 20px 4px;min-height:88px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
+    <div id="home-recents-strip" style="flex:1;min-height:0;display:flex;align-items:flex-start;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 20px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
   </main>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-active.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-active.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -661,11 +629,11 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
   </div>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="stopIdentify();goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="stopIdentify();goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="stopIdentify();goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+      <button onclick="stopIdentify();goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="stopIdentify();goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="stopIdentify();goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -698,11 +666,11 @@ window.addEventListener('unhandledrejection', function(e) {
     <button onclick="stopScanner();goTo('search')" style="font-family:Manrope,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.18em;color:rgba(223,131,46,.5);background:none;border:none;cursor:pointer">Can't scan? Search manually →</button>
   </div>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="stopScanner();goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="stopScanner();goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="stopScanner();goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+      <button onclick="stopScanner();goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="stopScanner();goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="stopScanner();goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -722,11 +690,11 @@ window.addEventListener('unhandledrejection', function(e) {
     <div id="search-results" style="display:flex;flex-direction:column;gap:10px"></div>
   </main>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -756,11 +724,11 @@ window.addEventListener('unhandledrejection', function(e) {
     </div>
   </main>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-active.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-active.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -991,11 +959,11 @@ window.addEventListener('unhandledrejection', function(e) {
 
   </main>
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block" aria-hidden="true">
+    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
     <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:calc(env(safe-area-inset-bottom) * 0.5)">
-      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-active.png" style="height:26px;display:block"></button>
+      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
+      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-active.png" style="height:26px;display:block;filter:brightness(0.75)"></button>
     </div>
   </div>
 </div>
@@ -1127,7 +1095,7 @@ async function doDevLogin() {
     const user = await checkAuth();
     if (!user) { errEl.textContent = 'Login failed — token invalid.'; errEl.style.display = 'block'; return; }
     localStorage.setItem('inkling_user_email', email);
-    if (!user.library_built) { goTo('onboarding-welcome'); } else { goTo('home'); await renderHomeStrip(); }
+    if (!user.library_built) { goTo('welcome'); } else { goTo('home'); await renderHomeStrip(); }
   } catch(e) { errEl.textContent = `Network error: ${e.message}. Make sure you're using the Railway URL, not a local file.`; errEl.style.display = 'block'; }
 }
 
@@ -1149,7 +1117,7 @@ async function doDevRegister() {
     localStorage.setItem('inkling_token', AUTH_TOKEN);
     localStorage.setItem('inkling_user_email', email);
     const user = await checkAuth();
-    if (user && user.library_built) { goTo('home'); await renderHomeStrip(); } else { goTo('onboarding-welcome'); }
+    if (user && user.library_built) { goTo('home'); await renderHomeStrip(); } else { goTo('welcome'); }
   } catch(e) { errEl.textContent = `Network error: ${e.message}. Make sure you're using the Railway URL, not a local file.`; errEl.style.display = 'block'; }
 }
 
@@ -2312,8 +2280,8 @@ function goTo(id){
   // Show persistent hero only on screens that use it
   const _ph = document.getElementById('persistent-hero');
   if (_ph) {
-    _ph.style.display = (id==='home'||id==='login'||id==='onboarding-welcome') ? 'flex' : 'none';
-    if (id==='home'||id==='login'||id==='onboarding-welcome') {
+    _ph.style.display = (id==='login') ? 'flex' : 'none';
+    if (id==='login') {
       const _hv = document.getElementById('hero-video');
       if (_hv) _hv.play().catch(()=>{});
     }

@@ -165,26 +165,28 @@ background:
   color:#b04f6b;
   margin:0 0 0.6vw 0;
   line-height:1.2;
+  text-align:center;
 }
 .nu-mainheading{
   font-family:'Newsreader',serif;
   font-style:normal;
   font-weight:400;
   font-size:9.6vw;
-  color:#feecd8;
+  color:#f5dfc0;
   line-height:1.05;
-  margin:0 0 5vw 0;
+  margin:0 0 3vw 0;
+  text-align:center;
 }
 /* Steps: diagram left | text right */
-/* Height = diagram_width * natural_AR (1398/333≈4.2) */
+/* Height reduced ~30% from natural AR (1398/333≈4.2) to bring steps closer */
 .nu-steps{
   display:flex;
   flex-direction:row;
   gap:4%;
   align-items:stretch;
-  margin-bottom:4vw;
-  height:calc(25vw * 4.2);
-  max-height:420px;
+  margin-bottom:3vw;
+  height:calc(25vw * 2.94);
+  max-height:294px;
   overflow:hidden;
 }
 .nu-diagram{
@@ -194,6 +196,7 @@ background:
   object-fit:contain;
   object-position:top center;
   height:100%;
+  filter:drop-shadow(0 0 4px rgba(223,131,46,.60)) drop-shadow(0 0 10px rgba(223,131,46,.32));
 }
 .nu-steptexts{
   flex:1;
@@ -255,13 +258,13 @@ background:
   flex-direction:column;
   align-items:center;
   gap:0.8vw;
-  padding-bottom:calc(env(safe-area-inset-bottom) + 18vw);
+  padding-bottom:calc(env(safe-area-inset-bottom) + 4vw);
 }
 .nu-custom{
   font-family:'Manrope',sans-serif;
   font-weight:400;
   font-size:2.69vw;
-  color:rgba(245,208,148,.47);
+  color:rgba(245,208,148,.68);
   margin:0;
   line-height:1.5;
 }
@@ -269,11 +272,13 @@ background:
   font-family:'Manrope',sans-serif;
   font-weight:400;
   font-size:2.69vw;
-  color:rgba(235,155,155,.72);
+  color:rgba(235,155,155,.80);
   background:none;
   border:none;
   cursor:pointer;
   padding:1px 6px;
+  text-decoration:underline;
+  text-underline-offset:2px;
   text-shadow:0 0 5px rgba(204,90,90,.7), 0 0 12px rgba(204,90,90,.45), 0 0 22px rgba(178,77,99,.35);
   -webkit-tap-highlight-color:transparent;
 }
@@ -281,7 +286,7 @@ background:
   font-family:'Manrope',sans-serif;
   font-weight:400;
   font-size:2.34vw;
-  color:rgba(212,160,96,.43);
+  color:rgba(212,160,96,.60);
   margin:0;
   text-align:center;
   line-height:1.45;

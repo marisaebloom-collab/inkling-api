@@ -12,6 +12,7 @@ import anthropic
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer as _HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
@@ -47,6 +48,9 @@ app.add_middleware(
 
 # Create DB tables on startup (idempotent — safe to run every deploy)
 models.Base.metadata.create_all(bind=engine)
+
+# Static assets (upload page images, etc.)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Auth router
 app.include_router(auth_router)
@@ -88,6 +92,29 @@ def _get_user_weights(user: User | None, db: Session) -> dict | None:
         return json.loads(settings.algorithm_weights)
     except Exception:
         return None
+
+
+def _get_user_settings(user: User | None, db: Session) -> UserSettings | None:
+    """Load UserSettings row for user, or None."""
+    if not user:
+        return None
+    return db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+
+
+def _apply_user_thresholds(scored: dict, settings: UserSettings | None) -> dict:
+    """Override bucket/verdict using per-user threshold settings."""
+    if not settings:
+        return scored
+    score = scored['master_score']
+    if score >= settings.threshold_strong:
+        bucket, verdict = 'Strong Keep', 'Strong Inkling'
+    elif score >= settings.threshold_keep:
+        bucket, verdict = 'Keep', 'On the Fence'
+    elif score >= settings.threshold_maybe:
+        bucket, verdict = 'Maybe', 'On the Fence'
+    else:
+        bucket, verdict = 'Cut', 'Hard Pass'
+    return {**scored, 'bucket': bucket, 'verdict': verdict}
 
 
 # ── Dev bypass: mark library as built ─────────────────────────────────────────
@@ -757,7 +784,8 @@ def format_tags(tags: dict) -> dict:
 
 # ── Library book result builder ────────────────────────────────────────────────
 
-def build_result(book: dict, meta: dict = None, user_weights: dict | None = None) -> dict:
+def build_result(book: dict, meta: dict = None, user_weights: dict | None = None,
+                 user_settings: UserSettings | None = None) -> dict:
     """Score a library book (pre-tagged from CSV) and format the full response."""
     tags = {tag: book.get(tag, 0) for tag in ALL_TAGS}
 
@@ -768,6 +796,7 @@ def build_result(book: dict, meta: dict = None, user_weights: dict | None = None
         'gr_avg':             book['gr_avg'],
         'critical_reception': book['critical_reception'],
     }, tags, user_weights=user_weights)
+    scored = _apply_user_thresholds(scored, user_settings)
 
     formatted = format_tags(tags)
     genre = [g for g in [book.get('g1', ''), book.get('g0', '')] if g]
@@ -857,14 +886,15 @@ def score_endpoint(
     if not title and not isbn:
         raise HTTPException(400, 'Provide title or isbn')
 
-    # Resolve per-user weights (None = use global defaults)
-    user_weights = _get_user_weights(current_user, db) if current_user else None
+    # Resolve per-user weights and threshold settings (None = use global defaults)
+    user_weights  = _get_user_weights(current_user, db) if current_user else None
+    user_settings = _get_user_settings(current_user, db)
 
     # 1. Library fast path
     book = find_book(BOOKS, title=title, isbn=isbn)
     if book:
         meta = ol_search(title=book['title']) if not isbn else ol_search(isbn=isbn)
-        return build_result(book, meta, user_weights=user_weights)
+        return build_result(book, meta, user_weights=user_weights, user_settings=user_settings)
 
     # 2. Not in library — fetch metadata
     if title and author:
@@ -915,6 +945,7 @@ def score_endpoint(
         'gr_avg':             meta['gr_avg'],
         'critical_reception': tags.get('Critical_Reception', 0),
     }, tags, user_weights=user_weights)
+    scored = _apply_user_thresholds(scored, user_settings)
 
     formatted = format_tags(tags)
     genre = [g for g in [formatted.get('g1', ''), formatted.get('g0', '')] if g]
@@ -1079,3 +1110,91 @@ def gr_find_endpoint(title: str = Query(...), author: str = Query('')):
     if not book_id:
         raise HTTPException(404, f'Could not find "{title}" on Goodreads')
     return {'book_id': book_id}
+
+
+# ── User settings ──────────────────────────────────────────────────────────────
+
+class SettingsUpdate(BaseModel):
+    threshold_strong: float | None = None
+    threshold_maybe:  float | None = None
+
+
+@app.get('/settings')
+def get_settings(
+    current_user: User    = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    """Return the authenticated user's settings, library stats, and auth info."""
+    from sqlalchemy import func as _func
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
+    if not settings:
+        settings = UserSettings(user_id=current_user.id)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+
+    # Auth method
+    if current_user.apple_user_id:
+        auth_method = 'apple'
+    elif current_user.google_user_id:
+        auth_method = 'google'
+    else:
+        auth_method = 'email'
+
+    # Library stats
+    from models import UserBook as _UB
+    book_count = db.query(_func.count(_UB.id)).filter(_UB.user_id == current_user.id).scalar() or 0
+    lib_date   = settings.updated_at.strftime('%-d %B %Y') if settings.updated_at and current_user.library_built else None
+
+    return {
+        'threshold_strong': settings.threshold_strong,
+        'threshold_keep':   settings.threshold_keep,
+        'threshold_maybe':  settings.threshold_maybe,
+        'email':            current_user.email,
+        'library_built':    current_user.library_built,
+        'auth_method':      auth_method,
+        'book_count':       book_count,
+        'lib_date':         lib_date,
+    }
+
+
+@app.delete('/account')
+def delete_account(
+    current_user: User    = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    """Permanently delete the authenticated user and all their data."""
+    db.delete(current_user)
+    db.commit()
+    return {'ok': True}
+
+
+@app.put('/settings')
+def update_settings(
+    body:         SettingsUpdate,
+    current_user: User    = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    """Update per-user verdict thresholds."""
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
+    if not settings:
+        settings = UserSettings(user_id=current_user.id)
+        db.add(settings)
+
+    if body.threshold_strong is not None:
+        settings.threshold_strong = round(max(0.50, min(0.99, body.threshold_strong)), 3)
+    if body.threshold_maybe is not None:
+        settings.threshold_maybe = round(max(0.10, min(0.85, body.threshold_maybe)), 3)
+
+    # Keep threshold_keep at midpoint (both On the Fence bands move together)
+    settings.threshold_keep = round(
+        (settings.threshold_strong + settings.threshold_maybe) / 2, 3
+    )
+
+    db.commit()
+    return {
+        'ok':              True,
+        'threshold_strong': settings.threshold_strong,
+        'threshold_keep':   settings.threshold_keep,
+        'threshold_maybe':  settings.threshold_maybe,
+    }

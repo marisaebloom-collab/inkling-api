@@ -39,6 +39,7 @@ CSV_PATH = os.environ.get(
 )
 
 app = FastAPI(title='Inkling API', version='2.0')
+app.mount('/static', StaticFiles(directory='static'), name='static')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],

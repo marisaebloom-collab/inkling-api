@@ -396,23 +396,25 @@ window.addEventListener('unhandledrejection', function(e) {
   <!-- Back arrow -->
   <button class="ob-back-btn" onclick="goTo('login')" aria-label="Back" style="z-index:10;top:calc(env(safe-area-inset-top) + 14px)"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
 
-  <!-- Background layers: fog full-screen; bulb scaled ~87% so it reads smaller, screen-blend fades dark edges into fog -->
-  <img src="/static/welcome-fog.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
-  <img src="/static/welcome-bulb.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2;transform:scale(0.87);transform-origin:top center;mix-blend-mode:screen;filter:saturate(1.35) brightness(1.02)" aria-hidden="true">
+  <!-- Background layers, bottom to top: bloom, light rays, fog, particles, light bulb -->
+  <img src="/static/welcome-bloom-layers.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
+  <img src="/static/welcome-light-rays.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2" aria-hidden="true">
+  <img src="/static/welcome-fog-layers.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:3" aria-hidden="true">
+  <img src="/static/welcome-particles.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:4" aria-hidden="true">
+  <img src="/static/welcome-light-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:5" aria-hidden="true">
 
   <!-- Book: 10% smaller, screen-blend so black bg is transparent -->
-  <img src="/static/welcome-book.png" style="position:absolute;width:66%;left:50%;transform:translateX(-50%);top:47%;z-index:3;pointer-events:none;mix-blend-mode:screen" aria-hidden="true">
+  <img src="/static/welcome-book.png" style="position:absolute;width:66%;left:50%;transform:translateX(-50%);top:47%;z-index:6;pointer-events:none;mix-blend-mode:screen" aria-hidden="true">
 
-  <!-- Text block: moved down a touch -->
-  <div aria-hidden="true" style="position:absolute;top:38%;left:0;right:0;padding:0 7%;text-align:center;z-index:4;pointer-events:none">
-    <h1 style="font-family:'Newsreader',serif;font-size:10.74vw;font-weight:352;font-variation-settings:'opsz' 16,'wght' 352;line-height:1.18;letter-spacing:0.010em;color:#f0c880;margin:0 0 2vw 0;-webkit-font-smoothing:antialiased">Welcome to a<br>better way to<br>choose books.</h1>
-    <p style="font-family:'Manrope',sans-serif;font-size:3.51vw;font-weight:400;line-height:1.65;color:rgba(176,108,52,0.80);margin:0;-webkit-font-smoothing:antialiased">Take the guesswork out of your TBR.</p>
+  <!-- Text block -->
+  <div aria-hidden="true" style="position:absolute;top:35%;left:0;right:0;padding:0 7%;text-align:center;z-index:7;pointer-events:none">
+    <h1 style="font-family:'Newsreader',serif;font-size:10.74vw;font-weight:352;font-variation-settings:'opsz' 16,'wght' 352;line-height:1.18;letter-spacing:0.010em;color:#f0c880;margin:0 0 2.8vw 0;-webkit-font-smoothing:antialiased">Welcome to a<br>better way to<br>choose books.</h1>
+    <p style="font-family:'Manrope',sans-serif;font-size:3.45vw;font-weight:400;line-height:1.75;color:rgba(176,108,52,0.88);margin:0;-webkit-font-smoothing:antialiased">Like a personal librarian who<br>knows your taste by heart,<br>Inkling takes the guesswork<br>out of your TBR.</p>
   </div>
 
-  <!-- Button: plum background, inner glow restored -->
-  <button onclick="_welcomeToLogin()" aria-label="Pull Up a Chair" style="position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 18px);padding:3.8vw 0;background:linear-gradient(180deg,#2a0c16 0%,#120408 100%);border:1px solid rgba(90,45,65,0.44);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:7;-webkit-tap-highlight-color:transparent;outline:none;box-shadow:0 0 18px rgba(130,60,20,0.40),0 0 36px rgba(110,45,15,0.22),inset 0 0 20px rgba(90,28,52,0.22),inset 0 1px 0 rgba(160,85,100,0.10);transition:opacity .12s">
-    <span style="font-family:'Manrope',sans-serif;font-size:3.71vw;font-weight:600;color:#d4a060;letter-spacing:-0.01em">Pull Up a Chair</span>
-  </button>
+  <!-- Button art -->
+  <img src="/static/welcome-pull-up-chair-button.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:8" aria-hidden="true">
+  <button onclick="_welcomeToLogin()" aria-label="Pull Up a Chair" style="position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 18px);height:17vw;min-height:56px;max-height:88px;background:transparent;border:none;border-radius:22px;display:block;cursor:pointer;z-index:9;-webkit-tap-highlight-color:transparent;outline:none"></button>
 </div>
 
 

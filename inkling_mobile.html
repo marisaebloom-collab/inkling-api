@@ -303,6 +303,91 @@ background:
   vertical-align:-0.12em;
 }
 
+.home-main{
+  position:relative;
+  z-index:2;
+  flex:1;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  padding:env(safe-area-inset-top) 0 calc(74px + env(safe-area-inset-bottom)) 0;
+}
+.home-top-spacer{flex:0 0 18.5vh;min-height:142px;max-height:202px}
+.home-wordmark-wrap{
+  width:55%;
+  max-width:282px;
+  height:auto;
+  margin:0 auto;
+}
+.home-wordmark{
+  width:100%;
+  display:block;
+  mix-blend-mode:screen;
+}
+.home-book-wrap{
+  width:72%;
+  max-width:368px;
+  margin:1.5vh auto 0;
+}
+.home-book{
+  width:100%;
+  display:block;
+  mix-blend-mode:screen;
+}
+.home-tagline{padding:1.5vh 24px 1.9vh;text-align:center;flex-shrink:0}
+.home-tagline-main{
+  font-family:'Newsreader',serif;
+  font-size:clamp(25px,7.1vw,34px);
+  font-weight:300;
+  font-style:italic;
+  line-height:1.08;
+  color:#F5D094;
+  margin:0 0 3px;
+  -webkit-font-smoothing:antialiased;
+}
+.home-tagline-sub{
+  font-family:'Newsreader',serif;
+  font-size:clamp(17px,4.9vw,24px);
+  font-weight:300;
+  font-style:italic;
+  line-height:1.12;
+  color:#F5D094;
+  margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.home-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:0 42px 2.4vh;flex-shrink:0}
+.home-action-btn{background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
+.home-action-img{width:100%;display:block;border-radius:14px;filter:brightness(.88) saturate(1.04)}
+.home-search-wrap{position:relative;padding:0 42px 1.8vh;flex-shrink:0}
+.home-search-img{width:100%;display:block;filter:brightness(.9) saturate(1.05)}
+.home-search-hit{position:absolute;inset:0 42px 1.8vh 42px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
+.home-recents-title{padding:0 42px 1.2vh;flex-shrink:0}
+.home-recents-title h3{font-family:'Newsreader',serif;font-size:clamp(20px,5vw,26px);font-weight:400;font-style:normal;color:#F5D094;margin:0}
+.home-recents-strip{
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:flex-start;
+  gap:9.8vw;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:0 42px 4px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.home-recent-placeholder{
+  flex:0 0 auto;
+  width:clamp(58px,17vw,78px);
+  aspect-ratio:160/210;
+  border:1.5px solid rgba(223,131,46,.72);
+  background:rgba(0,0,0,.18);
+}
+.home-nav{position:absolute;bottom:0;left:0;right:0;z-index:50}
+.home-nav-img{width:100%;display:block;filter:brightness(.82) saturate(.92)}
+.home-nav-buttons{position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}
+.home-nav-buttons button{background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent}
+.home-nav-buttons img{height:28px;display:block}
+
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
 
 /* ── Onboarding instructions screen ── */
@@ -335,6 +420,8 @@ background:
 /* ── Onboarding default text color (prevent white inheritance) ── */
 .onboarding-premium-wrap,.onboarding-premium-wrap p,.onboarding-premium-wrap h1,.onboarding-premium-wrap span{color:inherit}
 #onboarding-upload .onboarding-premium-wrap{color:rgba(183,168,153,.78)}
+#home.active ~ #persistent-hero,
+body:has(#home.active) #persistent-hero{display:none!important;pointer-events:none!important}
 /* ── Custom CSV popup modal ── */
 .ob-csv-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:flex-end;justify-content:center}
 .ob-csv-modal-sheet{width:100%;max-width:480px;background:#0f0b09;border:1px solid rgba(124,48,96,.18);border-radius:20px 20px 0 0;padding:20px 24px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
@@ -674,42 +761,42 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div id="home" class="screen" style="background:#000;position:relative;overflow:hidden">
   <img src="/static/home-bg.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0" aria-hidden="true">
-  <img src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1;transform:translateY(4%)" aria-hidden="true">
-  <main style="position:relative;z-index:2;flex:1;overflow:hidden;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 calc(68px + env(safe-area-inset-bottom)) 0">
-    <div style="flex:0 0 17vh;min-height:0;flex-shrink:0"></div>
-    <div style="text-align:center;padding:0 24px;flex-shrink:0">
-      <img src="/static/home-wordmark.png" style="width:56%;object-fit:contain;display:inline-block" alt="Inkling">
+  <img src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
+  <main class="home-main">
+    <div class="home-top-spacer"></div>
+    <div class="home-wordmark-wrap" aria-label="Inkling">
+      <img class="home-wordmark" src="/static/home-wordmark-cutout.png" alt="">
     </div>
-    <div style="text-align:center;padding:2px 24px 0;flex-shrink:0">
-      <img src="/static/home-book.png" style="width:52%;max-height:22vh;object-fit:contain;display:inline-block;mix-blend-mode:screen" aria-hidden="true">
+    <div class="home-book-wrap">
+      <img class="home-book" src="/static/home-book-cutout.png" aria-hidden="true">
     </div>
-    <div style="text-align:center;padding:6px 24px 10px;flex-shrink:0">
-      <p style="font-family:'Newsreader',serif;font-size:24px;font-weight:300;font-style:italic;color:#F5D094;margin:0 0 2px;-webkit-font-smoothing:antialiased">To read, or not to read?</p>
-      <p style="font-family:'Newsreader',serif;font-size:16px;font-weight:300;font-style:italic;color:#F5D094;margin:0;-webkit-font-smoothing:antialiased">That is the question.</p>
+    <div class="home-tagline">
+      <p class="home-tagline-main">To read, or not to read?</p>
+      <p class="home-tagline-sub">That is the question.</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 10px;flex-shrink:0">
-      <button onclick="goTo('scanner')" style="background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none" aria-label="Scan a barcode">
-        <img src="/static/home-scan-tile.png" style="width:100%;display:block;border-radius:14px;filter:brightness(0.65) saturate(0.8)">
+    <div class="home-action-grid">
+      <button class="home-action-btn" onclick="goTo('scanner')" aria-label="Scan a barcode">
+        <img class="home-action-img" src="/static/home-scan-tile.png">
       </button>
-      <button onclick="goTo('identify')" style="background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none" aria-label="Snap a photo">
-        <img src="/static/home-camera-tile.png" style="width:100%;display:block;border-radius:14px;filter:brightness(0.65) saturate(0.8)">
+      <button class="home-action-btn" onclick="goTo('identify')" aria-label="Snap a photo">
+        <img class="home-action-img" src="/static/home-camera-tile.png">
       </button>
     </div>
-    <div style="position:relative;padding:0 20px 10px;flex-shrink:0">
-      <img src="/static/home-search-bar.png" style="width:100%;display:block;filter:brightness(0.7) saturate(0.85)" aria-hidden="true">
-      <button onclick="goToSearch()" aria-label="Search by title or author" style="position:absolute;inset:0 20px 10px 20px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none"></button>
+    <div class="home-search-wrap">
+      <img class="home-search-img" src="/static/home-search-bar.png" aria-hidden="true">
+      <button class="home-search-hit" onclick="goToSearch()" aria-label="Search by title or author"></button>
     </div>
-    <div style="padding:0 20px 6px;flex-shrink:0">
-      <h3 style="font-family:'Newsreader',serif;font-size:14px;font-weight:400;font-style:italic;color:#F5D094;margin:0">Recently Searched</h3>
+    <div class="home-recents-title">
+      <h3>Recently Searched</h3>
     </div>
-    <div id="home-recents-strip" style="flex:1;min-height:0;display:flex;align-items:flex-start;gap:8px;overflow-x:auto;overflow-y:hidden;padding:0 20px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
+    <div id="home-recents-strip" class="home-recents-strip"></div>
   </main>
-  <div style="position:absolute;bottom:0;left:0;right:0;z-index:50">
-    <img src="/static/nav-bar.png" style="width:100%;display:block;filter:brightness(0.6) saturate(0.7)" aria-hidden="true">
-    <div style="position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)">
-      <button onclick="goTo('home')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Home"><img src="/static/nav-home-active.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('recents')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Recents"><img src="/static/nav-recents-inactive.png" style="height:26px;display:block"></button>
-      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent" aria-label="Profile"><img src="/static/nav-profile-inactive.png" style="height:26px;display:block"></button>
+  <div class="home-nav">
+    <img class="home-nav-img" src="/static/nav-bar.png" aria-hidden="true">
+    <div class="home-nav-buttons">
+      <button onclick="goTo('home')" aria-label="Home"><img src="/static/nav-home-active.png"></button>
+      <button onclick="goTo('recents')" aria-label="Recents"><img src="/static/nav-recents-inactive.png"></button>
+      <button onclick="goTo('profile')" aria-label="Profile"><img src="/static/nav-profile-inactive.png"></button>
     </div>
   </div>
 </div>
@@ -2365,14 +2452,14 @@ async function renderHomeStrip() {
   if (!el) return;
   const recents = getRecents();
   if (!recents.length) {
-    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:104px;gap:2px"><p style="font-family:Manrope,sans-serif;font-size:13px;color:rgba(184,120,64,.5);margin:0">Nothing here yet.</p><p style="font-family:Newsreader,serif;font-style:italic;font-size:13px;color:rgba(223,131,46,.6);margin:0">Pick up a book.</p></div>';
+    el.innerHTML = '<div class="home-recent-placeholder"></div><div class="home-recent-placeholder"></div><div class="home-recent-placeholder"></div>';
     return;
   }
   el.innerHTML = '';
   recents.slice(0, 10).forEach(b => {
     const vc = verdictColors(b.verdict);
     const div = document.createElement('div');
-    div.style.cssText = 'flex-shrink:0;width:56px;cursor:pointer;display:flex;flex-direction:column;align-items:center';
+    div.style.cssText = 'flex-shrink:0;width:clamp(58px,17vw,78px);cursor:pointer;display:flex;flex-direction:column;align-items:center';
     div.onclick = () => {
       PREV_SCREEN = 'recents';
       showResult({
@@ -2384,7 +2471,7 @@ async function renderHomeStrip() {
     };
     const cover = b.cover_url ? `<img src="${b.cover_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"/>` : '';
     div.innerHTML = `
-      <div style="width:56px;height:80px;border-radius:6px;overflow:hidden;background:linear-gradient(180deg,rgba(124,48,96,.06),rgba(74,26,56,.10)),rgba(0,0,0,.6);border:1px solid rgba(124,48,96,.15)">${cover}</div>
+      <div style="width:100%;aspect-ratio:160/210;overflow:hidden;background:rgba(0,0,0,.18);border:1.5px solid rgba(223,131,46,.72)">${cover}</div>
       <span class="vbadge" style="color:${vc[0]};background:${vc[1]};border-color:${vc[2]};font-size:8px;padding:1px 5px;margin-top:4px;display:block;text-align:center">${verdictShort(b.verdict)}</span>`;
     el.appendChild(div);
   });

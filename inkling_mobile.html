@@ -152,7 +152,7 @@ background:
   display:flex;
   flex-direction:column;
   width:100%;
-  padding:calc(env(safe-area-inset-top) + 58px) 22px 0 22px;
+  padding:calc(env(safe-area-inset-top) + 44px) 22px 0 22px;
   box-sizing:border-box;
 }
 .nu-howtitle{
@@ -172,7 +172,7 @@ background:
   font-size:9.6vw;
   color:#f5dfc0;
   line-height:1.05;
-  margin:0 0 3vw 0;
+  margin:0 0 2vw 0;
   text-align:center;
 }
 /* Steps: diagram left | text right */
@@ -182,13 +182,13 @@ background:
   flex-direction:row;
   gap:4%;
   align-items:stretch;
-  margin-bottom:3vw;
+  margin-bottom:2vw;
   height:calc(25vw * 2.94);
   max-height:294px;
-  overflow:hidden;
+  overflow:visible;
 }
 .nu-diagram{
-  width:25%;
+  width:28%;
   max-width:100px;
   flex-shrink:0;
   object-fit:contain;
@@ -198,21 +198,22 @@ background:
 }
 .nu-steptexts{
   flex:1;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
+  position:relative;
 }
 .nu-step{
-  flex:1;
+  position:absolute;
+  left:0;
+  right:0;
   display:flex;
   flex-direction:column;
-  justify-content:flex-start;
-  padding-top:0.5vw;
 }
+.nu-step:nth-child(1){ top:1.7%; }
+.nu-step:nth-child(2){ top:39.0%; }
+.nu-step:nth-child(3){ top:77.4%; }
 .nu-step-primary{
   font-family:'Newsreader',serif;
   font-weight:400;
-  font-size:5.4vw;
+  font-size:5.8vw;
   color:#df832e;
   line-height:1.22;
   margin:0 0 0.8vw 0;
@@ -227,7 +228,7 @@ background:
 }
 /* Button */
 .nu-btn-wrap{
-  padding:0 0 2vw 0;
+  padding:0;
 }
 .nu-btn-img-wrap{
   display:block;
@@ -239,7 +240,7 @@ background:
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
   position:relative;
-  height:30vw;
+  height:44vw;
   transition:opacity .12s;
 }
 .nu-btn-img-wrap:active{ opacity:.85; }
@@ -255,8 +256,10 @@ background:
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:0.8vw;
-  padding-bottom:calc(env(safe-area-inset-bottom) + 4vw);
+  gap:0.3vw;
+  margin-top:-20px;
+  padding-top:1.5vw;
+  padding-bottom:calc(env(safe-area-inset-bottom) + 100px);
 }
 .nu-custom{
   font-family:'Manrope',sans-serif;
@@ -270,14 +273,14 @@ background:
   font-family:'Manrope',sans-serif;
   font-weight:400;
   font-size:2.69vw;
-  color:rgba(235,155,155,.80);
+  color:rgba(176,79,107,.92);
   background:none;
   border:none;
   cursor:pointer;
   padding:1px 6px;
   text-decoration:underline;
   text-underline-offset:2px;
-  text-shadow:0 0 5px rgba(204,90,90,.7), 0 0 12px rgba(204,90,90,.45), 0 0 22px rgba(178,77,99,.35);
+  text-shadow:0 0 6px rgba(176,79,107,.60), 0 0 14px rgba(150,60,88,.38);
   -webkit-tap-highlight-color:transparent;
 }
 .nu-privacy{
@@ -394,7 +397,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
   <!-- Background layers: fog full-screen; bulb scaled ~87% so it reads smaller, screen-blend fades dark edges into fog -->
   <img src="/static/welcome-fog.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
-  <img src="/static/welcome-bulb.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2;transform:scale(0.87);transform-origin:top center;mix-blend-mode:screen" aria-hidden="true">
+  <img src="/static/welcome-bulb.png" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2;transform:scale(0.87);transform-origin:top center;mix-blend-mode:screen;filter:saturate(1.45) brightness(1.08)" aria-hidden="true">
 
   <!-- Book: 10% smaller, screen-blend so black bg is transparent -->
   <img src="/static/welcome-book.png" style="position:absolute;width:66%;left:50%;transform:translateX(-50%);top:47%;z-index:3;pointer-events:none;mix-blend-mode:screen" aria-hidden="true">
@@ -402,11 +405,11 @@ window.addEventListener('unhandledrejection', function(e) {
   <!-- Text block: moved down a touch -->
   <div aria-hidden="true" style="position:absolute;top:38%;left:0;right:0;padding:0 7%;text-align:center;z-index:4;pointer-events:none">
     <h1 style="font-family:'Newsreader',serif;font-size:10.74vw;font-weight:352;line-height:1.1;color:#f5d094;margin:0 0 3vw 0;-webkit-font-smoothing:antialiased">Welcome to a<br>better way to<br>choose books.</h1>
-    <p style="font-family:'Manrope',sans-serif;font-size:3.51vw;font-weight:400;line-height:1.65;color:#b87840;margin:0;-webkit-font-smoothing:antialiased">Like a personal librarian who<br>knows your taste by heart,<br>Inkling takes the guesswork<br>out of your TBR.</p>
+    <p style="font-family:'Manrope',sans-serif;font-size:3.51vw;font-weight:400;line-height:1.65;color:#b87840;margin:0;-webkit-font-smoothing:antialiased">Take the guesswork out of your TBR.</p>
   </div>
 
   <!-- Button: plum background, inner glow restored -->
-  <button onclick="_welcomeToLogin()" aria-label="Pull Up a Chair" style="position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 18px);padding:3.8vw 0;background:linear-gradient(180deg,#2a0c20 0%,#120610 100%);border:1px solid rgba(180,80,140,0.40);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:7;-webkit-tap-highlight-color:transparent;outline:none;box-shadow:0 0 16px rgba(180,88,20,0.50),0 0 30px rgba(160,70,16,0.28),inset 0 0 20px rgba(160,55,130,0.30),inset 0 1px 0 rgba(220,120,200,0.14);transition:opacity .12s">
+  <button onclick="_welcomeToLogin()" aria-label="Pull Up a Chair" style="position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 18px);padding:3.8vw 0;background:linear-gradient(180deg,#2d0d18 0%,#140509 100%);border:1px solid rgba(160,60,80,0.42);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:7;-webkit-tap-highlight-color:transparent;outline:none;box-shadow:0 0 16px rgba(180,88,20,0.50),0 0 30px rgba(160,70,16,0.28),inset 0 0 20px rgba(160,50,80,0.28),inset 0 1px 0 rgba(220,130,160,0.12);transition:opacity .12s">
     <span style="font-family:'Manrope',sans-serif;font-size:3.71vw;font-weight:600;color:#d4a060;letter-spacing:-0.01em">Pull Up a Chair</span>
   </button>
 </div>

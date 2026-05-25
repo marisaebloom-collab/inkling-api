@@ -152,7 +152,7 @@ background:
   display:flex;
   flex-direction:column;
   width:100%;
-  padding:calc(env(safe-area-inset-top) + 44px) 22px 0 22px;
+  padding:calc(env(safe-area-inset-top) + 20px) 22px 0 22px;
   box-sizing:border-box;
 }
 .nu-howtitle{
@@ -169,10 +169,10 @@ background:
   font-family:'Newsreader',serif;
   font-style:normal;
   font-weight:400;
-  font-size:9.6vw;
+  font-size:8.8vw;
   color:#f5dfc0;
-  line-height:1.05;
-  margin:0 0 2vw 0;
+  line-height:1.08;
+  margin:0 0 4vw 0;
   text-align:center;
 }
 /* Steps: diagram left | text right */
@@ -180,9 +180,10 @@ background:
 .nu-steps{
   display:flex;
   flex-direction:row;
-  gap:4%;
+  gap:3%;
   align-items:stretch;
   padding-top:14px;
+  padding-left:3vw;
   margin-bottom:calc(2vw - 14px);
   height:calc(25vw * 2.94);
   max-height:294px;
@@ -230,6 +231,7 @@ background:
 /* Button */
 .nu-btn-wrap{
   padding:0;
+  margin-top:-5vw;
 }
 .nu-btn-img-wrap{
   display:block;
@@ -258,7 +260,7 @@ background:
   flex-direction:column;
   align-items:center;
   gap:0.3vw;
-  margin-top:-20px;
+  margin-top:-28px;
   padding-top:1.5vw;
   padding-bottom:calc(env(safe-area-inset-bottom) + 100px);
 }
@@ -287,15 +289,18 @@ background:
 .nu-privacy{
   font-family:'Manrope',sans-serif;
   font-weight:400;
-  font-size:2.34vw;
+  font-size:2.45vw;
   color:rgba(212,160,96,.60);
   margin:0;
   text-align:center;
   line-height:1.45;
+  max-width:86vw;
+  white-space:nowrap;
 }
 .nu-lock{
   color:rgba(176,79,107,.88);
   font-size:2.69vw;
+  vertical-align:-0.12em;
 }
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
@@ -509,15 +514,15 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="nu-steptexts">
         <div class="nu-step">
           <p class="nu-step-primary">1. Hand over your reading history.</p>
-          <p class="nu-step-secondary">A Goodreads export, custom CSV, or Excel spreadsheet.</p>
+          <p class="nu-step-secondary">A Goodreads export, custom CSV,<br>or Excel spreadsheet.</p>
         </div>
         <div class="nu-step">
-          <p class="nu-step-primary">2. Inkling gets to know you as a reader.</p>
-          <p class="nu-step-secondary">Not just genres—moods, pacing, vibes—all that makes you, you.</p>
+          <p class="nu-step-primary">2. Inkling gets to<br>know you as a reader.</p>
+          <p class="nu-step-secondary">Not just genres–moods, pacing,<br>vibes–all that makes you, you.</p>
         </div>
         <div class="nu-step">
           <p class="nu-step-primary">3. Carry your personal librarian everywhere.</p>
-          <p class="nu-step-secondary">Little bookshops, airports, late night rabbit holes.</p>
+          <p class="nu-step-secondary">Little bookshops, airports,<br>late night rabbit holes.</p>
         </div>
       </div>
     </div>
@@ -533,7 +538,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="nu-instr">
       <p class="nu-custom">Using a custom spreadsheet?</p>
       <button class="nu-guide" onclick="showUploadHelp()">See guide →</button>
-      <p class="nu-privacy"><span class="nu-lock">🔒</span> Your data is private and secure. We'll never post without permission.</p>
+      <p class="nu-privacy"><span class="material-symbols-outlined nu-lock">lock</span> Your data is private and secure. We'll never post without permission.</p>
     </div>
 
   </div>

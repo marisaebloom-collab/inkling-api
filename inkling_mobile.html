@@ -152,7 +152,7 @@ background:
   display:flex;
   flex-direction:column;
   width:100%;
-  padding:calc(env(safe-area-inset-top) + 44px) 22px 0 22px;
+  padding:calc(env(safe-area-inset-top) + 20px) 22px 0 22px;
   box-sizing:border-box;
 }
 .nu-howtitle{
@@ -169,10 +169,10 @@ background:
   font-family:'Newsreader',serif;
   font-style:normal;
   font-weight:400;
-  font-size:9.6vw;
+  font-size:8.8vw;
   color:#f5dfc0;
-  line-height:1.05;
-  margin:0 0 2vw 0;
+  line-height:1.08;
+  margin:0 0 4vw 0;
   text-align:center;
 }
 /* Steps: diagram left | text right */
@@ -180,9 +180,10 @@ background:
 .nu-steps{
   display:flex;
   flex-direction:row;
-  gap:4%;
+  gap:3%;
   align-items:stretch;
   padding-top:14px;
+  padding-left:3vw;
   margin-bottom:calc(2vw - 14px);
   height:calc(25vw * 2.94);
   max-height:294px;
@@ -230,6 +231,7 @@ background:
 /* Button */
 .nu-btn-wrap{
   padding:0;
+  margin-top:-5vw;
 }
 .nu-btn-img-wrap{
   display:block;
@@ -258,7 +260,7 @@ background:
   flex-direction:column;
   align-items:center;
   gap:0.3vw;
-  margin-top:-20px;
+  margin-top:-28px;
   padding-top:1.5vw;
   padding-bottom:calc(env(safe-area-inset-bottom) + 100px);
 }
@@ -287,15 +289,18 @@ background:
 .nu-privacy{
   font-family:'Manrope',sans-serif;
   font-weight:400;
-  font-size:2.34vw;
+  font-size:2.45vw;
   color:rgba(212,160,96,.60);
   margin:0;
   text-align:center;
   line-height:1.45;
+  max-width:86vw;
+  white-space:nowrap;
 }
 .nu-lock{
   color:rgba(176,79,107,.88);
   font-size:2.69vw;
+  vertical-align:-0.12em;
 }
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
@@ -425,7 +430,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
   <!-- background glow -->
 
-  <div style="width:100%;max-width:380px;padding:calc(env(safe-area-inset-top) + 16px) 28px 28px;display:flex;flex-direction:column;align-items:center;gap:0">
+  <div style="width:100%;max-width:380px;padding:calc(env(safe-area-inset-top) + 16px) 28px 28px;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:3">
 
     <!-- Dev bypass label — shown above animation when dev form is open -->
     <p id="dev-bypass-label" style="display:none;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(223,131,46,.60);text-align:center;margin-bottom:8px">— dev bypass —</p>
@@ -452,7 +457,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- New user link -->
     <p style="text-align:center;margin-top:16px;font-family:'Manrope',sans-serif;font-size:13px;color:rgba(245,208,148,.45)">
-      New here? <button onclick="goTo('welcome')" style="background:none;border:none;padding:0;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:rgba(245,208,148,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Create an account</button>
+      New here? <button id="login-create-account" onclick="goTo('welcome')" style="background:none;border:none;padding:0;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:rgba(245,208,148,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Create an account</button>
     </p>
 
     <!-- Dev login form (hidden by default, revealed by triple-tap on logo) -->
@@ -509,15 +514,15 @@ window.addEventListener('unhandledrejection', function(e) {
       <div class="nu-steptexts">
         <div class="nu-step">
           <p class="nu-step-primary">1. Hand over your reading history.</p>
-          <p class="nu-step-secondary">A Goodreads export, custom CSV, or Excel spreadsheet.</p>
+          <p class="nu-step-secondary">A Goodreads export, custom CSV,<br>or Excel spreadsheet.</p>
         </div>
         <div class="nu-step">
-          <p class="nu-step-primary">2. Inkling gets to know you as a reader.</p>
-          <p class="nu-step-secondary">Not just genres—moods, pacing, vibes—all that makes you, you.</p>
+          <p class="nu-step-primary">2. Inkling gets to<br>know you as a reader.</p>
+          <p class="nu-step-secondary">Not just genres–moods, pacing,<br>vibes–all that makes you, you.</p>
         </div>
         <div class="nu-step">
           <p class="nu-step-primary">3. Carry your personal librarian everywhere.</p>
-          <p class="nu-step-secondary">Little bookshops, airports, late night rabbit holes.</p>
+          <p class="nu-step-secondary">Little bookshops, airports,<br>late night rabbit holes.</p>
         </div>
       </div>
     </div>
@@ -533,7 +538,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="nu-instr">
       <p class="nu-custom">Using a custom spreadsheet?</p>
       <button class="nu-guide" onclick="showUploadHelp()">See guide →</button>
-      <p class="nu-privacy"><span class="nu-lock">🔒</span> Your data is private and secure. We'll never post without permission.</p>
+      <p class="nu-privacy"><span class="material-symbols-outlined nu-lock">lock</span> Your data is private and secure. We'll never post without permission.</p>
     </div>
 
   </div>
@@ -1127,7 +1132,7 @@ function authLogout() {
 }
 
 // ── Dev bypass triple-tap ──
-let _devTapCount = 0, _devTapTimer = null;
+let _devTapCount = 0, _devTapTimer = null, _devLastInputAt = 0;
 function _updateHeroPlaceholders() {
   const vid = document.getElementById('hero-video');
   if (!vid) return;
@@ -1137,34 +1142,60 @@ function _updateHeroPlaceholders() {
 }
 window.addEventListener('resize', _updateHeroPlaceholders);
 
+function _onDevBypassTap(e) {
+  if (e) {
+    if (e.type === 'click' && Date.now() - _devLastInputAt < 350) return;
+    _devLastInputAt = Date.now();
+    e.preventDefault();
+  }
+  const login = document.getElementById('login');
+  if (!login || !login.classList.contains('active')) return;
+  _devTapCount++;
+  clearTimeout(_devTapTimer);
+  _devTapTimer = setTimeout(() => { _devTapCount = 0; }, 700);
+  if (_devTapCount >= 3) {
+    _devTapCount = 0;
+    const f = document.getElementById('login-dev-form');
+    const p = document.getElementById('login-public');
+    if (f && p) {
+      const showing = f.style.display === 'flex';
+      f.style.display = showing ? 'none' : 'flex';
+      p.style.display = showing ? 'flex' : 'none';
+      const lbl = document.getElementById('dev-bypass-label');
+      if (lbl) lbl.style.display = showing ? 'none' : 'block';
+      if (!showing) devRefreshForm();
+    }
+  }
+}
+
+function _bindTapTarget(el, handler) {
+  if (!el) return;
+  if (window.PointerEvent) el.addEventListener('pointerup', handler);
+  else {
+    el.addEventListener('touchend', handler, { passive:false });
+    el.addEventListener('click', handler);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Set placeholder heights once video dimensions are known
   const heroVid = document.getElementById('hero-video');
   if (heroVid) {
+    heroVid.style.pointerEvents = 'auto';
     heroVid.addEventListener('loadedmetadata', _updateHeroPlaceholders);
     heroVid.addEventListener('canplay', _updateHeroPlaceholders);
     // Also try immediately in case already loaded
     if (heroVid.readyState >= 1) _updateHeroPlaceholders();
   }
+  const hero = document.getElementById('persistent-hero');
+  if (hero) hero.style.pointerEvents = 'auto';
 
-  const logo = document.getElementById('login-logo-tap');
-  if (logo) logo.addEventListener('click', () => {
-    _devTapCount++;
-    clearTimeout(_devTapTimer);
-    _devTapTimer = setTimeout(() => { _devTapCount = 0; }, 700);
-    if (_devTapCount >= 3) {
-      _devTapCount = 0;
-      const f = document.getElementById('login-dev-form');
-      const p = document.getElementById('login-public');
-      if (f && p) {
-        const showing = f.style.display === 'flex';
-        f.style.display = showing ? 'none' : 'flex';
-        p.style.display = showing ? 'flex' : 'none';
-        const lbl = document.getElementById('dev-bypass-label');
-        if (lbl) lbl.style.display = showing ? 'none' : 'block';
-        if (!showing) devRefreshForm();
-      }
-    }
+  _bindTapTarget(document.getElementById('login-logo-tap'), _onDevBypassTap);
+  _bindTapTarget(hero, _onDevBypassTap);
+
+  _bindTapTarget(document.getElementById('login-create-account'), (e) => {
+    if (e) e.preventDefault();
+    goTo('welcome');
   });
 });
 
@@ -2373,6 +2404,7 @@ function goTo(id){
   const _ph = document.getElementById('persistent-hero');
   if (_ph) {
     _ph.style.display = (id==='login') ? 'flex' : 'none';
+    _ph.style.pointerEvents = (id==='login') ? 'auto' : 'none';
     if (id==='login') {
       const _hv = document.getElementById('hero-video');
       if (_hv) _hv.play().catch(()=>{});

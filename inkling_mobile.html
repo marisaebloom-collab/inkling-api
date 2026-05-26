@@ -312,27 +312,39 @@ background:
   flex-direction:column;
   padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom)) 0;
 }
-.home-top-spacer{flex:0 0 19.5vh;min-height:154px;max-height:176px}
+.home-bulb-img{transform:translateY(14px)}
+.home-top-spacer{flex:0 0 20.6vh;min-height:164px;max-height:186px}
 .home-wordmark-wrap{
-  width:41%;
-  max-width:210px;
-  height:auto;
+  width:48%;
+  max-width:244px;
+  aspect-ratio:782/315;
   margin:0 auto;
+  overflow:hidden;
+  position:relative;
 }
 .home-wordmark{
   width:100%;
+  height:auto;
   display:block;
-  mix-blend-mode:screen;
+  position:absolute;
+  left:0;
+  bottom:0;
 }
 .home-book-wrap{
-  width:58%;
-  max-width:300px;
-  margin:1vh auto 0;
+  width:72%;
+  max-width:360px;
+  aspect-ratio:1144/650;
+  margin:-1.3vh auto 0;
+  overflow:hidden;
+  position:relative;
 }
 .home-book{
   width:100%;
+  height:auto;
   display:block;
-  mix-blend-mode:screen;
+  position:absolute;
+  left:0;
+  bottom:0;
 }
 .home-tagline{padding:.8vh 24px 1.2vh;text-align:center;flex-shrink:0}
 .home-tagline-main{
@@ -359,34 +371,38 @@ background:
 .home-action-btn{background:none;border:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
 .home-action-img{width:100%;display:block;border-radius:14px;filter:brightness(.88) saturate(1.04)}
 .home-search-wrap{position:relative;padding:0 42px 2.6vh;flex-shrink:0}
-.home-search-img{width:100%;display:block;filter:brightness(.9) saturate(1.05)}
+.home-search-surface{
+  width:100%;
+  aspect-ratio:1654/227;
+  border-radius:16px;
+  background:linear-gradient(0deg,rgba(83,20,48,.86) 0%,rgba(40,4,22,.96) 52%,rgba(16,0,8,.98) 100%);
+  border:1px solid rgba(223,131,46,.18);
+  box-shadow:inset 0 10px 18px rgba(0,0,0,.45),inset 0 -7px 16px rgba(255,137,40,.08),0 0 18px rgba(223,131,46,.12);
+}
+.home-search-content{position:absolute;left:58px;right:58px;top:0;bottom:2.6vh;display:flex;align-items:center;gap:13px;pointer-events:none}
+.home-search-content .material-symbols-outlined{font-size:25px;color:#F29C22;filter:drop-shadow(0 0 8px rgba(242,156,34,.85))}
+.home-search-content span:last-child{font-family:Manrope,sans-serif;font-size:clamp(14px,4.2vw,19px);font-weight:700;color:rgba(161,94,19,.78);line-height:1}
 .home-search-hit{position:absolute;inset:0 42px 2.6vh 42px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
-.home-recents-title{padding:0 42px .9vh;flex-shrink:0}
-.home-recents-title h3{font-family:'Newsreader',serif;font-size:clamp(18px,4.5vw,24px);font-weight:400;font-style:normal;color:#F5D094;margin:0}
+.home-recents-title{padding:0 42px .8vh;flex-shrink:0}
+.home-recents-title h3{font-family:'Newsreader',serif;font-size:clamp(16px,4.1vw,21px);font-weight:400;font-style:normal;color:#F5D094;margin:0}
 .home-recents-strip{
-  flex:0 0 clamp(112px,15.5vh,132px);
-  min-height:112px;
+  flex:0 0 clamp(106px,14.6vh,124px);
+  min-height:106px;
   display:flex;
   align-items:flex-start;
   gap:9.8vw;
   overflow-x:auto;
   overflow-y:hidden;
-  padding:0 42px 6px;
+  padding:0 42px 14px;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
-.home-recent-placeholder{
-  flex:0 0 auto;
-  width:clamp(68px,19vw,82px);
-  aspect-ratio:160/210;
-  border:1.5px solid rgba(223,131,46,.72);
-  background:rgba(0,0,0,.18);
-}
+.home-recents-empty{font-family:Manrope,sans-serif;font-size:clamp(12px,3.35vw,15px);font-weight:500;line-height:1.35;color:rgba(245,208,148,.66);margin:0;padding-top:2px}
 .home-nav{position:absolute;bottom:0;left:0;right:0;z-index:50}
 .home-nav-img{width:100%;display:block;filter:brightness(.82) saturate(.92)}
 .home-nav-buttons{position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}
 .home-nav-buttons button{background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent}
-.home-nav-buttons img{height:28px;display:block}
+.home-nav-buttons img{height:28px;display:block;transform:translateY(6px)}
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
 
@@ -761,14 +777,14 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div id="home" class="screen" style="background:#000;position:relative;overflow:hidden">
   <img src="/static/home-bg.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0" aria-hidden="true">
-  <img src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
+  <img class="home-bulb-img" src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
   <main class="home-main">
     <div class="home-top-spacer"></div>
     <div class="home-wordmark-wrap" aria-label="Inkling">
-      <img class="home-wordmark" src="/static/home-wordmark-cutout.png" alt="">
+      <img class="home-wordmark" src="/static/home-wordmark.png" alt="">
     </div>
     <div class="home-book-wrap">
-      <img class="home-book" src="/static/home-book-cutout.png" aria-hidden="true">
+      <img class="home-book" src="/static/home-book.png" aria-hidden="true">
     </div>
     <div class="home-tagline">
       <p class="home-tagline-main">To read, or not to read?</p>
@@ -783,7 +799,11 @@ window.addEventListener('unhandledrejection', function(e) {
       </button>
     </div>
     <div class="home-search-wrap">
-      <img class="home-search-img" src="/static/home-search-bar.png" aria-hidden="true">
+      <div class="home-search-surface" aria-hidden="true"></div>
+      <div class="home-search-content" aria-hidden="true">
+        <span class="material-symbols-outlined">search</span>
+        <span>Search by title or author</span>
+      </div>
       <button class="home-search-hit" onclick="goToSearch()" aria-label="Search by title or author"></button>
     </div>
     <div class="home-recents-title">
@@ -2452,14 +2472,14 @@ async function renderHomeStrip() {
   if (!el) return;
   const recents = getRecents();
   if (!recents.length) {
-    el.innerHTML = '<div class="home-recent-placeholder"></div><div class="home-recent-placeholder"></div><div class="home-recent-placeholder"></div>';
+    el.innerHTML = '<p class="home-recents-empty">Nothing here yet. Go find your next read.</p>';
     return;
   }
   el.innerHTML = '';
   recents.slice(0, 10).forEach(b => {
     const vc = verdictColors(b.verdict);
     const div = document.createElement('div');
-    div.style.cssText = 'flex-shrink:0;width:clamp(58px,17vw,78px);cursor:pointer;display:flex;flex-direction:column;align-items:center';
+    div.style.cssText = 'flex-shrink:0;width:clamp(50px,14.2vw,66px);cursor:pointer;display:flex;flex-direction:column;align-items:center';
     div.onclick = () => {
       PREV_SCREEN = 'recents';
       showResult({

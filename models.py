@@ -104,6 +104,8 @@ class UserBook(Base):
     isbn        = Column(String,  nullable=True, index=True)
     shelf       = Column(String,  nullable=True)    # read | currently-reading | to-read
     tags        = Column(String,  nullable=True)    # JSON array; populated at calibration
+    gr_avg      = Column(Float,   nullable=True)    # crowd average rating (CSV or OL fetch)
+    pred5       = Column(Float,   nullable=True)    # predicted 5★ probability post-regression
 
     user = relationship('User', back_populates='books')
 
@@ -167,6 +169,37 @@ class UserSettings(Base):
     # None = user hasn't calibrated yet; scoring falls back to global weights.py values.
     algorithm_weights = Column(String, nullable=True)
 
+    # Lift tables and regression coefficients — all nullable, populated post-calibration.
+    trope_lifts       = Column(String, nullable=True)   # JSON: {tag: shrunk_lift}
+    vibe_lifts        = Column(String, nullable=True)   # JSON: {tag: shrunk_lift}
+    g0_genre_lifts    = Column(String, nullable=True)   # JSON: {genre: shrunk_lift}
+    g1_genre_lifts    = Column(String, nullable=True)   # JSON: {subgenre: shrunk_lift}
+    pred5_coefficients = Column(String, nullable=True)  # JSON: logistic regression coefficients
+
     updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 
     user = relationship('User', back_populates='settings')
+
+
+# ── BookTags (global cache) ───────────────────────────────────────────────────
+
+class BookTags(Base):
+    """Global book tag cache — shared across all users, keyed by ISBN (or title+author).
+
+    Pre-populated with commonly-read books; extended at calibration time as
+    new books are encountered. No user_id — this is population-wide data.
+    """
+    __tablename__ = 'book_tags'
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    isbn               = Column(String, nullable=True, index=True)
+    title              = Column(String, nullable=False)
+    author             = Column(String, nullable=False)
+    tags               = Column(String, nullable=True)    # JSON: all R/P/T/V/G tags as {tag: 0/1}
+    critical_reception = Column(Integer, nullable=True)   # 0–3
+    cover_url          = Column(String, nullable=True)
+    description        = Column(String, nullable=True)
+    publication_year   = Column(Integer, nullable=True)
+    series_info        = Column(String, nullable=True)
+    tagged_at          = Column(DateTime(timezone=True), default=_now)
+    model_version      = Column(String, nullable=True)

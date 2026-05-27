@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from models import User, UserSettings
 from library import load_library, find_book
 from upload import router as upload_router
+from calibrate import router as calibrate_router
 from score import score_book
 from weights import (
     BUCKET_DISPLAY,
@@ -58,6 +59,9 @@ app.include_router(auth_router)
 
 # Library upload + calibration router
 app.include_router(upload_router)
+
+# New calibration pipeline (SSE streaming)
+app.include_router(calibrate_router)
 
 # ── Optional auth — resolves user from JWT if present, else None ──────────────
 from fastapi import Depends

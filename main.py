@@ -870,7 +870,11 @@ def serve_app():
     html_path = Path(__file__).parent / 'inkling_mobile.html'
     if not html_path.exists():
         raise HTTPException(404, 'App HTML not found')
-    return HTMLResponse(content=html_path.read_text(), status_code=200)
+    response = HTMLResponse(content=html_path.read_text(), status_code=200)
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.get('/score')

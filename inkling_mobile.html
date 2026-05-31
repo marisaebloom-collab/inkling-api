@@ -251,20 +251,52 @@ background:
 }
 .login-dev-card.is-open{display:flex}
 .login-public-hidden{display:none!important}
-.login-dev-open::after{
-  content:'';
-  position:absolute;
-  left:0;
-  right:0;
-  top:330px;
-  bottom:0;
-  background:linear-gradient(180deg,rgba(0,0,0,.9) 0%,#000 18%,#000 100%);
-  z-index:2;
-  pointer-events:none;
+.login-dev-open .login-mockup-image,
+.login-dev-open .login-mock-hero,
+.login-dev-open #login-public,
+.login-dev-open .login-mock-tagline{
+  display:none!important;
+  pointer-events:none!important;
 }
-.login-dev-open .login-mockup-image{opacity:1}
-.login-dev-open #dev-bypass-label{position:absolute;top:346px;left:0;right:0}
-.login-dev-open .login-dev-card{margin-top:6px}
+.login-dev-open .login-mock-panel{
+  z-index:30;
+  background:#000;
+  padding:calc(env(safe-area-inset-top) + 82px) 34px calc(env(safe-area-inset-bottom) + 28px);
+  align-items:stretch;
+  justify-content:flex-start;
+  pointer-events:auto;
+}
+.login-dev-open #dev-bypass-label{
+  display:block!important;
+  position:static!important;
+  margin:0 0 34px!important;
+  text-align:center!important;
+  font-size:12px!important;
+}
+.login-dev-open .login-dev-card{
+  display:flex!important;
+  position:static;
+  left:auto;
+  right:auto;
+  top:auto;
+  width:100%;
+  margin:0;
+  padding:0;
+  z-index:35;
+  pointer-events:auto;
+}
+.login-dev-open .login-dev-card > span{
+  position:static!important;
+  display:block;
+  margin:0 0 2px;
+}
+.login-dev-back{
+  position:fixed!important;
+  top:calc(env(safe-area-inset-top) + 18px)!important;
+  left:22px!important;
+  right:auto!important;
+  z-index:45!important;
+}
 @keyframes ring-expand{0%{opacity:.55;transform:scale(.92)}100%{opacity:0;transform:scale(1.08)}}
 
 
@@ -727,7 +759,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <div id="login-dev-form" class="login-dev-card">
       <span style="position:absolute;top:-2px;left:0;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(183,168,153,.32);pointer-events:none">DEV ONLY</span>
-      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';document.getElementById('login').classList.remove('login-dev-open');})()" aria-label="Back" style="position:absolute;top:10px;right:0;left:auto"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
+      <button class="ob-back-btn login-dev-back" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';document.getElementById('login').classList.remove('login-dev-open');})()" aria-label="Back"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
       <button class="auth-btn" style="height:44px;border-radius:10px;background:linear-gradient(160deg,#301623 0%,#080503 100%);border:1px solid rgba(124,48,96,.3);color:#df832e;font-size:13px;font-weight:700;box-shadow:0 2px 14px rgba(0,0,0,.5)" onclick="devLoginAsMarisa()">Use as Marisa</button>
       <input id="dev-email" type="email" placeholder="Email" autocomplete="email" class="auth-input"/>
       <input id="dev-password" type="password" placeholder="Password" autocomplete="current-password" class="auth-input"/>

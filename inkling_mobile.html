@@ -97,6 +97,174 @@ background:
 .auth-input::placeholder{color:rgba(184,120,64,.35)}
 .auth-divider{display:flex;align-items:center;gap:12px;width:100%}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+.login-mock-screen{
+  background:#000;
+  position:relative;
+  overflow:hidden;
+  align-items:stretch;
+  justify-content:flex-start;
+}
+.login-mockup-image{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+  z-index:0;
+}
+.login-mock-hero{
+  position:absolute;
+  inset:0;
+  height:auto;
+  min-height:0;
+  max-height:none;
+  overflow:hidden;
+  z-index:5;
+}
+.login-mock-bg,.login-mock-bulb{
+  display:none;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+}
+.login-mock-bg{z-index:0;object-position:50% 0}
+.login-mock-bulb{z-index:1;object-position:50% 0;transform:translateY(14px)}
+.login-logo-tap-target{
+  position:absolute;
+  left:10%;
+  right:10%;
+  top:7%;
+  bottom:39%;
+  z-index:8;
+  cursor:pointer;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.login-mock-wordmark-wrap{
+  display:none;
+  position:absolute;
+  z-index:2;
+  left:50%;
+  top:52.6%;
+  width:38%;
+  max-width:210px;
+  aspect-ratio:782/315;
+  transform:translate(-50%,-50%);
+  overflow:hidden;
+}
+.login-mock-wordmark{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:100%;
+  display:block;
+}
+.login-mock-book-wrap{
+  display:none;
+  position:absolute;
+  z-index:2;
+  left:50%;
+  bottom:3.8%;
+  width:70%;
+  max-width:390px;
+  aspect-ratio:1144/650;
+  transform:translateX(-50%);
+  overflow:hidden;
+}
+.login-mock-book{
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:100%;
+  display:block;
+}
+.login-mock-panel{
+  width:100%;
+  max-width:none;
+  margin:0 auto;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:absolute;
+  inset:0;
+  z-index:3;
+}
+.login-mock-tagline{
+  display:none;
+  font-family:'Newsreader',serif;
+  font-size:clamp(30px,8.7vw,48px);
+  font-weight:500;
+  font-style:italic;
+  line-height:1.06;
+  color:#F5D094;
+  text-align:center;
+  margin:0 0 clamp(40px,7vh,74px);
+  -webkit-font-smoothing:antialiased;
+}
+.login-auth-buttons{
+  position:absolute;
+  left:9.5%;
+  right:9.5%;
+  bottom:13.6%;
+  width:auto;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
+.login-auth-btn{
+  width:100%;
+  height:7.1vh;
+  min-height:56px;
+  max-height:64px;
+  border:0;
+  border-radius:12px;
+  background:transparent;
+  color:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  font-family:'Manrope',sans-serif;
+  font-size:clamp(19px,5.5vw,27px);
+  font-weight:600;
+  letter-spacing:-.01em;
+  cursor:pointer;
+}
+.login-auth-btn:active{opacity:.86}
+.login-auth-btn svg{width:28px;height:28px;flex-shrink:0;opacity:0}
+.login-dev-card{
+  display:none;
+  position:absolute;
+  left:34px;
+  right:34px;
+  top:392px;
+  width:auto;
+  flex-direction:column;
+  gap:10px;
+  margin-top:18px;
+  padding:18px 0 0;
+}
+.login-dev-card.is-open{display:flex}
+.login-public-hidden{display:none!important}
+.login-dev-open::after{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  top:330px;
+  bottom:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.9) 0%,#000 18%,#000 100%);
+  z-index:2;
+  pointer-events:none;
+}
+.login-dev-open .login-mockup-image{opacity:1}
+.login-dev-open #dev-bypass-label{position:absolute;top:346px;left:0;right:0}
+.login-dev-open .login-dev-card{margin-top:6px}
 @keyframes ring-expand{0%{opacity:.55;transform:scale(.92)}100%{opacity:0;transform:scale(1.08)}}
 
 
@@ -497,7 +665,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </symbol>
 </svg>
 
-<div id="persistent-hero" style="position:fixed;top:calc(env(safe-area-inset-top) + 16px);left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:2;-webkit-mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%);mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%)"><video id="hero-video" autoplay muted loop playsinline style="width:58%;max-width:220px"><source src="/static/hero-video.mp4" type="video/mp4"></video></div>
+<div id="persistent-hero" style="position:fixed;top:calc(env(safe-area-inset-top) + 16px);left:0;right:0;display:none;justify-content:center;pointer-events:none;z-index:2;-webkit-mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%);mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%)"><video id="hero-video" autoplay muted loop playsinline style="width:58%;max-width:220px"><source src="/static/hero-video.mp4" type="video/mp4"></video></div>
 
 <!-- ═══ WELCOME ═══ -->
 <div id="welcome" class="screen" style="background:#000;position:relative;overflow:hidden">
@@ -528,48 +696,39 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <!-- ═══ HOME ═══ -->
 <!-- ═══ LOGIN SCREEN ═══ -->
-<div id="login" class="screen active" style="background:#000;align-items:center;justify-content:flex-start;overflow-y:auto;position:relative">
-<div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 55% 35% at 0% 0%,rgba(80,18,48,.38) 0%,transparent 65%),radial-gradient(ellipse 55% 35% at 100% 0%,rgba(80,18,48,.38) 0%,transparent 65%),radial-gradient(ellipse 70% 45% at 50% 0%,rgba(60,12,36,.10) 0%,transparent 50%),radial-gradient(ellipse 45% 55% at 0% 100%,rgba(80,18,48,.25) 0%,transparent 55%),radial-gradient(ellipse 45% 55% at 100% 100%,rgba(80,18,48,.25) 0%,transparent 55%)"></div>
-
-  <!-- background glow -->
-
-  <div style="width:100%;max-width:380px;padding:calc(env(safe-area-inset-top) + 16px) 28px 28px;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;z-index:3">
-
-    <!-- Dev bypass label — shown above animation when dev form is open -->
-    <p id="dev-bypass-label" style="display:none;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(223,131,46,.60);text-align:center;margin-bottom:8px">— dev bypass —</p>
-    <!-- Logo placeholder + tagline -->
-    <div id="login-logo-tap" class="hero-ph" style="flex-shrink:0;margin-bottom:12px;cursor:pointer;-webkit-user-select:none;user-select:none"></div>
-    <div style="text-align:center;padding:0 12px 16px">
-      <p style="font-family:Newsreader,serif;font-size:24px;font-weight:700;font-style:italic;line-height:1.2;color:rgba(223,131,46,.5);margin:0">To read, or not to read?</p>
-      <p style="font-family:Newsreader,serif;font-size:15px;font-weight:400;font-style:italic;color:rgba(223,131,46,.5);margin:0">That is the question.</p>
+<div id="login" class="screen active login-mock-screen">
+  <img class="login-mockup-image" src="/static/login-page-mockup.png" aria-hidden="true">
+  <section class="login-mock-hero" aria-label="Inkling">
+    <img class="login-mock-bg" src="/static/home-bg.png" aria-hidden="true">
+    <img class="login-mock-bulb" src="/static/home-bulb.png" aria-hidden="true">
+    <div class="login-mock-wordmark-wrap">
+      <img class="login-mock-wordmark" src="/static/home-wordmark.png" alt="">
     </div>
+    <div class="login-mock-book-wrap">
+      <img class="login-mock-book" src="/static/home-book.png" aria-hidden="true">
+    </div>
+    <div id="login-logo-tap" class="login-logo-tap-target" aria-label="Developer bypass"></div>
+  </section>
 
-    <!-- Public auth buttons -->
-    <div id="login-public" style="width:100%;display:flex;flex-direction:column;gap:10px">
-      <button class="auth-btn auth-btn-apple" onclick="appleSignIn()">
-        <!-- Apple logo SVG -->
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14.09 9.55c-.02-2.13 1.74-3.17 1.82-3.22-1-1.46-2.55-1.66-3.09-1.68-1.31-.13-2.57.77-3.23.77-.68 0-1.71-.75-2.81-.73C5.19 4.71 3.6 5.65 2.72 7.16c-1.79 3.09-.46 7.66 1.27 10.17.86 1.24 1.88 2.62 3.21 2.57 1.3-.05 1.78-.83 3.35-.83 1.56 0 2 .83 3.36.8 1.39-.02 2.27-1.24 3.11-2.49.99-1.43 1.39-2.82 1.41-2.89-.03-.01-2.7-1.03-2.73-4.08l-.61.14zM11.83 3.19c.71-.86 1.18-2.04 1.05-3.23-1.01.04-2.25.67-2.98 1.51-.65.75-1.23 1.96-1.08 3.11 1.13.09 2.28-.57 3.01-1.39z" fill="#000"/></svg>
+  <section class="login-mock-panel">
+    <p id="dev-bypass-label" style="display:none;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(223,131,46,.62);text-align:center;margin:0 0 10px">— dev bypass —</p>
+    <h1 class="login-mock-tagline">To read, or not to read?</h1>
+
+    <div id="login-public" class="login-auth-buttons">
+      <button class="login-auth-btn" onclick="appleSignIn()">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M14.09 9.55c-.02-2.13 1.74-3.17 1.82-3.22-1-1.46-2.55-1.66-3.09-1.68-1.31-.13-2.57.77-3.23.77-.68 0-1.71-.75-2.81-.73C5.19 4.71 3.6 5.65 2.72 7.16c-1.79 3.09-.46 7.66 1.27 10.17.86 1.24 1.88 2.62 3.21 2.57 1.3-.05 1.78-.83 3.35-.83 1.56 0 2 .83 3.36.8 1.39-.02 2.27-1.24 3.11-2.49.99-1.43 1.39-2.82 1.41-2.89-.03-.01-2.7-1.03-2.73-4.08l-.61.14zM11.83 3.19c.71-.86 1.18-2.04 1.05-3.23-1.01.04-2.25.67-2.98 1.51-.65.75-1.23 1.96-1.08 3.11 1.13.09 2.28-.57 3.01-1.39z" fill="#000"/></svg>
         Continue with Apple
       </button>
-      <button class="auth-btn auth-btn-google" onclick="googleSignIn()">
-        <!-- Google logo SVG -->
-        <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+      <button class="login-auth-btn" onclick="googleSignIn()">
+        <svg viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
         Continue with Google
       </button>
     </div>
 
-    <!-- New user link -->
-    <p style="text-align:center;margin-top:16px;font-family:'Manrope',sans-serif;font-size:13px;color:rgba(245,208,148,.45)">
-      New here? <button id="login-create-account" onclick="goTo('welcome')" style="background:none;border:none;padding:0;font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:rgba(245,208,148,.75);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Create an account</button>
-    </p>
-
-    <!-- Dev login form (hidden by default, revealed by triple-tap on logo) -->
-    <div id="login-dev-form" style="display:none;width:100%;flex-direction:column;gap:10px;position:relative">
-      <span style="position:absolute;top:-6px;left:0;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(183,168,153,.28);pointer-events:none">DEV ONLY</span>
-      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';})()" aria-label="Back" style="position:absolute;top:0;right:16px;left:auto"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
-      <!-- Marisa quick-login -->
+    <div id="login-dev-form" class="login-dev-card">
+      <span style="position:absolute;top:-2px;left:0;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(183,168,153,.32);pointer-events:none">DEV ONLY</span>
+      <button class="ob-back-btn" onclick="(function(){document.getElementById('login-dev-form').style.display='none';document.getElementById('login-public').style.display='flex';document.getElementById('dev-bypass-label').style.display='none';document.getElementById('login').classList.remove('login-dev-open');})()" aria-label="Back" style="position:absolute;top:10px;right:0;left:auto"><span class="material-symbols-outlined" style="font-size:22px">arrow_back</span></button>
       <button class="auth-btn" style="height:44px;border-radius:10px;background:linear-gradient(160deg,#301623 0%,#080503 100%);border:1px solid rgba(124,48,96,.3);color:#df832e;font-size:13px;font-weight:700;box-shadow:0 2px 14px rgba(0,0,0,.5)" onclick="devLoginAsMarisa()">Use as Marisa</button>
-
       <input id="dev-email" type="email" placeholder="Email" autocomplete="email" class="auth-input"/>
       <input id="dev-password" type="password" placeholder="Password" autocomplete="current-password" class="auth-input"/>
       <p id="dev-login-err" style="display:none;font-size:13px;color:#ff6b6b;text-align:center;font-weight:600"></p>
@@ -577,15 +736,12 @@ window.addEventListener('unhandledrejection', function(e) {
         <button class="auth-btn auth-btn-ghost" style="flex:1;height:44px;font-size:13px;color:rgba(223,131,46,.70)" onclick="doDevLogin()">Sign in</button>
         <button class="auth-btn auth-btn-ghost" style="flex:1;height:44px;font-size:12px;color:rgba(223,131,46,.70)" onclick="doDevRegister()">Create account</button>
       </div>
-
-      <!-- Reset library — only shown for non-Marisa accounts -->
       <button id="dev-reset-btn" onclick="devResetLibrary()"
         style="margin-top:4px;background:none;border:none;font-size:10px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:rgba(180,60,60,.45);cursor:pointer;font-family:'Manrope',sans-serif;display:none">
         Reset library (dev)
       </button>
     </div>
-
-  </div>
+  </section>
 </div>
 
 <!-- ═══ ONBOARDING — UPLOAD ═══ -->
@@ -1332,6 +1488,7 @@ function _onDevBypassTap(e) {
       const showing = f.style.display === 'flex';
       f.style.display = showing ? 'none' : 'flex';
       p.style.display = showing ? 'flex' : 'none';
+      login.classList.toggle('login-dev-open', !showing);
       const lbl = document.getElementById('dev-bypass-label');
       if (lbl) lbl.style.display = showing ? 'none' : 'block';
       if (!showing) devRefreshForm();
@@ -2719,12 +2876,8 @@ function goTo(id){
   // Show persistent hero only on screens that use it
   const _ph = document.getElementById('persistent-hero');
   if (_ph) {
-    _ph.style.display = (id==='login') ? 'flex' : 'none';
-    _ph.style.pointerEvents = (id==='login') ? 'auto' : 'none';
-    if (id==='login') {
-      const _hv = document.getElementById('hero-video');
-      if (_hv) _hv.play().catch(()=>{});
-    }
+    _ph.style.display = 'none';
+    _ph.style.pointerEvents = 'none';
   }
   if(id==='recents') renderRecents();
   if(id==='home'){renderHomeStrip().catch(e=>console.warn('homestrip error:',e));}

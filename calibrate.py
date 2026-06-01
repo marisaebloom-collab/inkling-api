@@ -810,7 +810,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
                     0.24 + (0.16 * pct),
                 )
 
-        batch_size = 5
+        batch_size = 10
         total_pending = len(pending_books)
         processed_pending = 0
         for start in range(0, total_pending, batch_size):

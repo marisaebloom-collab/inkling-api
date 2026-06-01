@@ -123,10 +123,11 @@ def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _sse_msg(phase: str, text: str, delay_after_ms: int) -> str:
-    return _sse_event('calibration_message', {
-        'phase': phase, 'text': text, 'delay_after_ms': delay_after_ms,
-    })
+def _sse_msg(phase: str, text: str, delay_after_ms: int, progress: float | None = None) -> str:
+    payload = {'phase': phase, 'text': text, 'delay_after_ms': delay_after_ms}
+    if progress is not None:
+        payload['progress'] = max(0.0, min(0.99, progress))
+    return _sse_event('calibration_message', payload)
 
 
 # ── Computation helpers ───────────────────────────────────────────────────────
@@ -581,12 +582,12 @@ def _risk_message(risk_weights: dict[str, float], n_rated: int) -> str:
 
 def _tagging_messages(pct_done: float, strong_signal: str | None) -> list[str]:
     """Return narrative progress messages during the tagging phase."""
-    msgs = ["Detecting your taste patterns across your library…"]
+    msgs = ["Noting your taste patterns…"]
     if strong_signal:
-        msgs.append(f"Found {strong_signal} as a recurring element in your highest-rated books.")
+        msgs.append(f"Finding the books that left a mark…")
     else:
-        msgs.append("Mapping what separates your 5★ reads from the rest…")
-    msgs.append("Connecting the dots between what you love and what falls flat.")
+        msgs.append("Looking for repeat favorite authors…")
+    msgs.append("Checking what you loved and what lost you…")
     return msgs
 
 
@@ -604,9 +605,9 @@ def _stream_calibration(user: User, db: Session, mode: str):
         n_read = len(read_books)
 
         if recalibrate:
-            yield _sse_msg('counting', f"Updating your taste profile… {n_books} books in your library.", 1200)
+            yield _sse_msg('counting', "Reading your library…", 1200, 0.08)
         else:
-            yield _sse_msg('counting', f"Reading your library… {n_books} books found.", 1200)
+            yield _sse_msg('counting', "Reading your library…", 1200, 0.08)
 
         # ── Phase 2: Validation ────────────────────────────────────────────────
         author_avgs, author_5star, author_books_count = _build_author_maps(user_books)
@@ -621,7 +622,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
             if b.shelf == 'read' and b.author in loved_authors
         )
 
-        yield _sse_msg('validation', f"{n_loved_books} books by authors you love.", 1200)
+        yield _sse_msg('validation', "Looking for repeat favorite authors…", 1200, 0.14)
 
         # ── Phase 3: Author callouts ───────────────────────────────────────────
         # Build AuthorProfile rows
@@ -659,11 +660,9 @@ def _stream_calibration(user: User, db: Session, mode: str):
         # Top author by book count (rated)
         top_author = max(author_books_count.items(), key=lambda x: x[1], default=('', 0))
         if top_author[0]:
-            avg = author_avgs.get(top_author[0], 0.0)
-            n = top_author[1]
-            yield _sse_msg('authors', f"{top_author[0]}: {n} books, avg {avg:.1f}★", 1500)
+            yield _sse_msg('authors', "Finding the books that left a mark…", 1500, 0.20)
         else:
-            yield _sse_msg('authors', "Mapping your most-read authors…", 1500)
+            yield _sse_msg('authors', "Walking the shelves of your library…", 1500, 0.20)
 
         # ── Phase 4: Tagging ───────────────────────────────────────────────────
         # Collect rated books (the ones we need tags for)
@@ -672,10 +671,22 @@ def _stream_calibration(user: User, db: Session, mode: str):
 
         # Emit first tagging narrative message
         tagging_msgs = _tagging_messages(0.0, None)
-        yield _sse_msg('tagging', tagging_msgs[0], 1500)
+        yield _sse_msg('tagging', tagging_msgs[0], 1500, 0.24)
 
         # Tag each book — cache check first, then Claude if needed
         tag_dicts: dict[int, dict] = {}  # book.id -> tag dict
+        progress_msgs = [
+            "Noting your taste patterns…",
+            "Looking for repeat favorite authors…",
+            "Checking what you loved and what lost you…",
+            "Walking the shelves of your library…",
+            "Illuminating the aisles of the stacks…",
+            "Finding the books that left a mark…",
+            "Listening for your quiet preferences…",
+            "Letting your library come into focus…",
+        ]
+        last_progress_emit = time.monotonic()
+        progress_msg_idx = 0
 
         for i, b in enumerate(rated):
             # Check book_tags cache
@@ -740,12 +751,16 @@ def _stream_calibration(user: User, db: Session, mode: str):
                     db.add(bt)
                     db.flush()
 
-            # Emit intermediate tagging messages at ~33% and ~66%
             pct = (i + 1) / max(n_rated, 1)
-            if abs(pct - 0.33) < (1 / max(n_rated, 1)):
-                yield _sse_msg('tagging', tagging_msgs[1], 1200)
-            elif abs(pct - 0.66) < (1 / max(n_rated, 1)):
-                yield _sse_msg('tagging', tagging_msgs[2], 1200)
+            if time.monotonic() - last_progress_emit >= 5:
+                progress_msg_idx = (progress_msg_idx + 1) % len(progress_msgs)
+                yield _sse_msg(
+                    'tagging',
+                    progress_msgs[progress_msg_idx],
+                    1200,
+                    0.24 + (0.44 * pct),
+                )
+                last_progress_emit = time.monotonic()
 
         db.commit()
 
@@ -758,16 +773,16 @@ def _stream_calibration(user: User, db: Session, mode: str):
 
         pattern_msgs = _pattern_messages(trope_lifts, vibe_lifts, DEFAULT_REWARD_WEIGHTS, n_rated)
         for msg in pattern_msgs:
-            yield _sse_msg('patterns', msg, 1500)
+            yield _sse_msg('patterns', "Letting your library come into focus…", 1500, 0.74)
 
         # ── Phase 6: Risk awareness ────────────────────────────────────────────
         reward_weights, risk_weights = _compute_rp_weights(rated, author_avgs, tag_dicts)
 
         risk_msg = _risk_message(risk_weights, n_rated)
-        yield _sse_msg('risks', risk_msg, 1500)
+        yield _sse_msg('risks', "Listening for your quiet preferences…", 1500, 0.84)
 
         # ── Phase 7: pred5 + component weights ────────────────────────────────
-        yield _sse_msg('building', 'Building your personal algorithm…', 2000)
+        yield _sse_msg('building', 'Illuminating the aisles of the stacks…', 2000, 0.92)
 
         pred5_coefficients = None
         if n_rated >= 30:
@@ -798,7 +813,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
             # (simplified: just nudge weights based on correlation)
             pass  # Keep defaults for now; full multi-variate regression is future work
 
-        yield _sse_msg('building', 'Almost there — finalizing your taste profile.', 1500)
+        yield _sse_msg('building', 'Almost there — finishing your reading profile.', 1500, 0.96)
 
         # ── Phase 8: Finalize + store ──────────────────────────────────────────
         top_signals = _top_signals(trope_lifts, vibe_lifts, reward_weights)

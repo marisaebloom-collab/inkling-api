@@ -462,6 +462,33 @@ background:
   padding-top:1.5vw;
   padding-bottom:calc(env(safe-area-inset-bottom) + 100px);
 }
+.nu-library-note{
+  font-family:'Manrope',sans-serif;
+  font-weight:400;
+  font-size:2.45vw;
+  color:rgba(245,208,148,.62);
+  text-align:center;
+  line-height:1.38;
+  margin:0 0 1.6vw;
+}
+.nu-upload-alert{
+  display:none;
+  width:min(82vw,330px);
+  margin:0 0 1.8vw;
+  padding:10px 13px;
+  border:1px solid rgba(176,79,107,.38);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(74,26,56,.50),rgba(8,5,3,.72));
+  box-shadow:0 0 18px rgba(124,48,96,.18);
+}
+.nu-upload-alert p{
+  margin:0;
+  font-family:'Manrope',sans-serif;
+  font-size:2.65vw;
+  line-height:1.45;
+  color:rgba(245,208,148,.78);
+  text-align:center;
+}
 .nu-custom{
   font-family:'Manrope',sans-serif;
   font-weight:400;
@@ -827,6 +854,10 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Below-button instructions -->
     <div class="nu-instr">
+      <p class="nu-library-note">Bring at least 50 rated books. Inkling sees you best with 100+.<br>Profile building usually takes 1-3 minutes.</p>
+      <div id="ob-upload-error" class="nu-upload-alert" role="alert" aria-live="polite">
+        <p id="ob-upload-error-msg"></p>
+      </div>
       <p class="nu-custom">Using a custom spreadsheet?</p>
       <button class="nu-guide" onclick="showUploadHelp()">See guide →</button>
       <p class="nu-privacy"><span class="material-symbols-outlined nu-lock">lock</span> Your data is private and secure. We'll never post without permission.</p>
@@ -1690,6 +1721,7 @@ let _ob_validate_result = null;
 let _ob_column_map      = {};
 let _ob_ambiguous       = [];
 let _ob_ambiguous_idx   = 0;
+let _ob_assumed_all_read = false;
 // Called immediately when the user selects a file from the native picker.
 // Triggers validation — no separate "Analyze" button.
 async function onCSVSelected(input) {
@@ -1723,14 +1755,24 @@ async function runValidation() {
   }
 
   if (!result.valid) {
+    let msg = '';
     const MESSAGES = {
-      'wrong_file_type': "This file format isn't supported. Export your Goodreads library as a CSV and try again.",
-      'unreadable':       "We couldn't read that file. Try re-exporting from Goodreads and uploading again.",
-      'no_book_data':     "This file doesn't look like a reading history. Make sure you're uploading your Goodreads library export.",
-      'missing_columns':  "We couldn't find the required columns. Check the instructions above for the expected column names.",
-      'no_read_shelf':    "Your reading history needs to include books you've finished. Make sure your Goodreads export includes your 'read' shelf.",
+      'wrong_file_type': "This file format isn't supported. Please upload a .csv, .xls, or .xlsx file.",
+      'unreadable':       "We couldn't read that file. Try saving it again as a CSV or Excel file, then upload once more.",
+      'no_book_data':     "We couldn't find any book rows in that file. Make sure it includes your reading history.",
+      'no_rated_books':   "We found the file, but couldn't identify finished books with usable ratings. Make sure each row has a title, author, and rating.",
+      'no_read_shelf':    "We found a status column, but couldn't identify finished books. Use values like read, finished, completed, or done.",
     };
-    showUploadError(MESSAGES[result.error_code] || 'Upload failed — please try again.');
+    if (result.error_code === 'missing_columns') {
+      const missing = (result.missing || []).map(function(field) {
+        return field === 'My Rating' ? 'Rating' : field;
+      }).join(', ');
+      msg = 'We need a little more from this file. Required fields: Title, Author, and Rating.';
+      if (missing) msg += ' Missing: ' + missing + '.';
+    } else {
+      msg = MESSAGES[result.error_code] || 'Upload failed. Please try again.';
+    }
+    showUploadError(msg);
     return;
   }
 
@@ -1738,13 +1780,14 @@ async function runValidation() {
   _ob_column_map      = result.column_map  || {};
   _ob_ambiguous       = result.ambiguous   || [];
   _ob_ambiguous_idx   = 0;
+  _ob_assumed_all_read = !!result.assumed_all_read;
 
   if (_ob_ambiguous.length > 0) {
     showColumnConfirmation();
     return;
   }
 
-  checkLibrarySize(result.read_count);
+  checkLibrarySize(result.rated_count || result.read_count || 0);
 }
 
 function showUploadError(msg) {
@@ -1759,7 +1802,7 @@ function showUploadError(msg) {
 
 function showColumnConfirmation() {
   const item = _ob_ambiguous[_ob_ambiguous_idx];
-  if (!item) { checkLibrarySize(_ob_validate_result.read_count); return; }
+  if (!item) { checkLibrarySize(_ob_validate_result.rated_count || _ob_validate_result.read_count || 0); return; }
 
   const el = (id) => document.getElementById(id);
   if (el('ob-col-name'))  el('ob-col-name').textContent  = '“' + item.best_guess + '”';
@@ -1769,7 +1812,7 @@ function showColumnConfirmation() {
   const sampleVal = el('ob-col-sample-val');
   if (sampleVal) sampleVal.textContent = item.sample || '';
 
-  const isOptional = ['Date Read', 'ISBN'].includes(item.field);
+  const isOptional = ['Exclusive Shelf', 'Date Read', 'ISBN'].includes(item.field);
   const skipBtn = el('ob-col-skip');
   if (skipBtn) skipBtn.style.display = isOptional ? 'block' : 'none';
 
@@ -1810,24 +1853,26 @@ function selectColumnAlt(colName) {
 
 // ── Library size check ────────────────────────────────────────────────────────
 
-function checkLibrarySize(readCount) {
-  if (readCount >= 100) { proceedToUpload(); return; }
+function checkLibrarySize(ratedCount) {
+  if (ratedCount >= 100) { proceedToUpload(); return; }
 
   const el = (id) => document.getElementById(id);
 
-  if (readCount >= 50) {
+  if (ratedCount >= 50) {
     if (el('ob-check-icon'))  { el('ob-check-icon').textContent = 'info'; el('ob-check-icon').style.color = 'rgba(223,131,46,.55)'; }
-    if (el('ob-check-title')) el('ob-check-title').textContent = 'Small library detected';
+    if (el('ob-check-title')) el('ob-check-title').textContent = 'Enough to begin';
     if (el('ob-check-body'))  el('ob-check-body').textContent  =
-      'We found ' + readCount + ' finished books in your library. Inkling is most accurate with 100 or more, but you can proceed now and your profile will improve as you log more reads.';
+      'Your library is just large enough to begin. Inkling will start here, but it will understand you much better as you read more. Update your library after every 10-15 books, or about once a month.' +
+      (_ob_assumed_all_read ? ' No status column found, so Inkling will treat every row as a finished book.' : '');
     if (el('ob-check-buttons')) el('ob-check-buttons').innerHTML =
       '<button class="auth-btn auth-btn-primary" style="width:100%" onclick="proceedToUpload()">Proceed anyway</button>' +
       '<button class="auth-btn auth-btn-ghost"   style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
   } else {
     if (el('ob-check-icon'))  { el('ob-check-icon').textContent = 'block'; el('ob-check-icon').style.color = 'rgba(170,40,64,.65)'; }
-    if (el('ob-check-title')) el('ob-check-title').textContent = 'Not enough reads';
+    if (el('ob-check-title')) el('ob-check-title').textContent = 'Not enough rated books';
     if (el('ob-check-body'))  el('ob-check-body').textContent  =
-      'We found ' + readCount + ' finished books in your library. Inkling needs at least 50 to build your taste profile. Add more reads to your Goodreads ‘read’ shelf, re-export, and try again.';
+      'Inkling needs at least 50 rated books to begin. Add more rated reads to your library, then upload it again.' +
+      (_ob_assumed_all_read ? ' No status column was found, so Inkling treated every row as a finished book.' : '');
     if (el('ob-check-buttons')) el('ob-check-buttons').innerHTML =
       '<button class="auth-btn auth-btn-ghost" style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
   }
@@ -1839,7 +1884,8 @@ function checkLibrarySize(readCount) {
 
 async function proceedToUpload() {
   goTo('onboarding-processing');
-  _calibInitMessage('Reading your library…');
+  _calibInitMessage(_ob_assumed_all_read ? 'No status column found, so Inkling will treat every row as a finished book.' : 'Reading your library…');
+  _calibStartHeartbeat();
 
   const form = new FormData();
   form.append('file', _csvFile);
@@ -1852,6 +1898,7 @@ async function proceedToUpload() {
     });
     if (!res.ok) {
       const d = await res.json().catch(function() { return { detail: 'Upload failed.' }; });
+      _calibStopHeartbeat();
       showUploadError(d.detail || 'Upload failed — please try again.');
       return;
     }
@@ -1861,6 +1908,7 @@ async function proceedToUpload() {
     _isRecalibration = false;
     startCalibrationStream(AUTH_TOKEN, mode);
   } catch(e) {
+    _calibStopHeartbeat();
     showUploadError('Network error — please try again.');
     return;
   }
@@ -1870,11 +1918,50 @@ async function proceedToUpload() {
 // ── Calibration stream ─────────────────────────────────────────────────────
 
 var _calibStreamAborted = false;
+var _calibHeartbeatTimer = null;
+var _calibLastServerAt = 0;
+var _calibHeartbeatIdx = 0;
+var _calibDisplayedPct = 0;
 
 var _CALIB_PHASE_PCT = {
   counting: 0.08, validation: 0.14, authors: 0.20,
   tagging: 0.55, patterns: 0.72, risks: 0.82, building: 0.92, done: 1.0
 };
+
+var _CALIB_HEARTBEAT_MESSAGES = [
+  'Reading your library…',
+  'Noting your taste patterns…',
+  'Looking for repeat favorite authors…',
+  'Checking what you loved and what lost you…',
+  'Walking the shelves of your library…',
+  'Illuminating the aisles of the stacks…',
+  'Finding the books that left a mark…',
+  'Listening for your quiet preferences…',
+  'Letting your library come into focus…'
+];
+
+function _calibMessageWithPct(text) {
+  var pct = Math.max(0, Math.min(99, Math.round(_calibDisplayedPct * 100)));
+  if (!pct || /%$/.test(text)) return text;
+  return text + ' ' + pct + '%';
+}
+
+function _calibStartHeartbeat() {
+  _calibStopHeartbeat();
+  _calibLastServerAt = Date.now();
+  _calibHeartbeatIdx = 0;
+  _calibDisplayedPct = 0;
+  _calibHeartbeatTimer = setInterval(function() {
+    if (Date.now() - _calibLastServerAt < 4500) return;
+    _calibHeartbeatIdx = (_calibHeartbeatIdx + 1) % _CALIB_HEARTBEAT_MESSAGES.length;
+    _calibShowMessage(_calibMessageWithPct(_CALIB_HEARTBEAT_MESSAGES[_calibHeartbeatIdx]), 1200);
+  }, 5000);
+}
+
+function _calibStopHeartbeat() {
+  if (_calibHeartbeatTimer) clearInterval(_calibHeartbeatTimer);
+  _calibHeartbeatTimer = null;
+}
 
 function _calibInitMessage(text) {
   var msgEl = document.getElementById('calib-message');
@@ -1898,8 +1985,9 @@ function _calibShowMessage(text, holdMs) {
 }
 
 function _calibUpdateProgress(pct) {
+  _calibDisplayedPct = Math.max(_calibDisplayedPct || 0, pct || 0);
   var bar = document.getElementById('calib-progress-bar');
-  if (bar) bar.style.width = (pct * 100) + '%';
+  if (bar) bar.style.width = (_calibDisplayedPct * 100) + '%';
 }
 
 function populateRevealScreen(profile) {
@@ -1963,9 +2051,10 @@ function populateRevealScreen(profile) {
 }
 
 function showFallbackCalibration() {
+  _calibStopHeartbeat();
   var msgs = [
-    'Building your personal algorithm…',
-    'Almost there — finalizing your taste profile.',
+    'Letting your library come into focus…',
+    'Almost there — finishing your reading profile.',
     'Your Inkling is ready.'
   ];
   var chain = Promise.resolve();
@@ -1994,6 +2083,7 @@ function showFallbackCalibration() {
 // NOT async — uses promise chains for WKWebView compatibility.
 function startCalibrationStream(token, mode) {
   _calibStreamAborted = false;
+  _calibLastServerAt = Date.now();
   var url = API_URL + '/calibration/stream?mode=' + (mode || 'initial');
   var headers = {};
   if (token) headers['Authorization'] = 'Bearer ' + token;
@@ -2017,6 +2107,7 @@ function startCalibrationStream(token, mode) {
             try {
               var payload = JSON.parse(rawData);
               if (evt === 'done') {
+                _calibStopHeartbeat();
                 msgQueue = msgQueue.then(function() {
                   _calibUpdateProgress(1.0);
                   return _calibShowMessage('Your Inkling is ready.', 2200);
@@ -2029,11 +2120,13 @@ function startCalibrationStream(token, mode) {
                   }, 500);
                 });
               } else if (evt === 'calibration_message') {
+                _calibLastServerAt = Date.now();
                 msgQueue = msgQueue.then(function() {
-                  _calibUpdateProgress(_CALIB_PHASE_PCT[payload.phase] || 0);
-                  return _calibShowMessage(payload.text, payload.delay_after_ms || 1200);
+                  _calibUpdateProgress(payload.progress || _CALIB_PHASE_PCT[payload.phase] || 0);
+                  return _calibShowMessage(_calibMessageWithPct(payload.text), payload.delay_after_ms || 1200);
                 });
               } else if (evt === 'error') {
+                _calibStopHeartbeat();
                 msgQueue = msgQueue.then(function() {
                   showFallbackCalibration();
                   return Promise.resolve();
@@ -2061,6 +2154,7 @@ function startCalibrationStream(token, mode) {
     return readLoop();
   }).catch(function(e) {
     console.warn('[CALIB] stream error:', e);
+    _calibStopHeartbeat();
     showFallbackCalibration();
   });
 }

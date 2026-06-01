@@ -762,6 +762,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
                 )
                 last_progress_emit = time.monotonic()
 
+        yield _sse_msg('tagging', "Letting your library come into focus…", 1200, 0.68)
         db.commit()
 
         # ── Phase 5: Pattern detection ─────────────────────────────────────────

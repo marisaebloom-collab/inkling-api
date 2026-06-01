@@ -465,28 +465,54 @@ background:
 .nu-library-note{
   font-family:'Manrope',sans-serif;
   font-weight:400;
-  font-size:2.45vw;
+  font-size:2.42vw;
   color:rgba(245,208,148,.62);
   text-align:center;
   line-height:1.38;
   margin:0 0 1.6vw;
+  max-width:86vw;
 }
-.nu-upload-alert{
+.nu-upload-alert{display:none}
+.nu-error-modal{
   display:none;
-  width:min(82vw,330px);
-  margin:0 0 1.8vw;
-  padding:10px 13px;
-  border:1px solid rgba(176,79,107,.38);
-  border-radius:12px;
-  background:linear-gradient(180deg,rgba(74,26,56,.50),rgba(8,5,3,.72));
-  box-shadow:0 0 18px rgba(124,48,96,.18);
+  position:fixed;
+  inset:0;
+  z-index:80;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,.64);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
 }
-.nu-upload-alert p{
+.nu-error-card{
+  width:min(84vw,340px);
+  border:1px solid rgba(176,79,107,.38);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(48,22,35,.96),rgba(8,5,3,.98));
+  box-shadow:0 0 32px rgba(124,48,96,.32),0 18px 48px rgba(0,0,0,.62);
+  padding:22px 18px 18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.nu-error-title{
+  margin:0;
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-weight:400;
+  font-size:22px;
+  line-height:1.18;
+  color:#f5d094;
+  text-align:center;
+}
+.nu-error-card p{
   margin:0;
   font-family:'Manrope',sans-serif;
-  font-size:2.65vw;
-  line-height:1.45;
-  color:rgba(245,208,148,.78);
+  font-size:13px;
+  line-height:1.55;
+  color:rgba(245,208,148,.74);
   text-align:center;
 }
 .nu-custom{
@@ -854,7 +880,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
     <!-- Below-button instructions -->
     <div class="nu-instr">
-      <p class="nu-library-note">Bring at least 50 rated books. Inkling sees you best with 100+.<br>Profile building usually takes 1-3 minutes.</p>
+      <p class="nu-library-note">Bring at least 50 rated books, though 100 or more are ideal. Building your taste profile can take several minutes for larger libraries.</p>
       <div id="ob-upload-error" class="nu-upload-alert" role="alert" aria-live="polite">
         <p id="ob-upload-error-msg"></p>
       </div>
@@ -865,13 +891,21 @@ window.addEventListener('unhandledrejection', function(e) {
 
   </div>
 
+  <div id="ob-error-modal" class="nu-error-modal" role="dialog" aria-modal="true" aria-labelledby="ob-error-title">
+    <div class="nu-error-card">
+      <h3 id="ob-error-title" class="nu-error-title">Something needs a closer look.</h3>
+      <p id="ob-error-body"></p>
+      <button class="auth-btn auth-btn-primary" style="width:100%;height:48px" onclick="closeUploadErrorModal()">Try Again</button>
+    </div>
+  </div>
+
   <!-- Hidden functional elements preserved for JS compatibility -->
   <input id="csv-input" type="file" accept=".csv,.xls,.xlsx" style="display:none"
-         onchange="onCSVSelected(this); if(this.files&&this.files.length) uploadCSV()"/>
+         onchange="onCSVSelected(this)"/>
   <div id="upload-zone" style="display:none" onclick="document.getElementById('csv-input').click()">
     <p id="upload-zone-label">Upload my reading history</p>
   </div>
-  <button id="upload-btn" style="display:none;opacity:.4;pointer-events:none" onclick="uploadCSV()">Analyze my taste</button>
+  <button id="upload-btn" style="display:none;opacity:.4;pointer-events:none">Analyze my taste</button>
 
 </div>
 
@@ -916,21 +950,22 @@ window.addEventListener('unhandledrejection', function(e) {
 <div id="onboarding-processing" class="screen" style="background:#000;align-items:center;justify-content:center;position:relative;overflow:hidden">
 
   <!-- Background ambient glow -->
-  <div style="position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(124,48,96,.28) 0%,rgba(223,131,46,.07) 50%,transparent 72%);pointer-events:none;animation:calib-glow-pulse 3s ease-in-out infinite"></div>
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(124,48,96,.30) 0%,rgba(223,131,46,.08) 50%,transparent 72%);pointer-events:none;animation:calib-glow-pulse 2s ease-in-out infinite"></div>
 
-  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;padding:0 28px;position:relative;z-index:1">
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;padding:0 28px;position:relative;z-index:1;transform:translateY(-8px)">
 
     <!-- Glowing book image, CSS fallback if image absent -->
-    <div id="calib-book-wrap" style="position:relative;width:160px;height:160px;flex-shrink:0;margin-bottom:44px">
-      <div id="calib-book-fallback" style="position:absolute;inset:0;border-radius:20px;background:radial-gradient(ellipse 70% 82% at 50% 42%,rgba(223,131,46,.52) 0%,rgba(124,48,96,.36) 52%,rgba(74,26,56,.18) 80%,transparent 100%);animation:calib-glow-pulse 3s ease-in-out infinite"></div>
+    <div id="calib-book-wrap" style="position:relative;width:150px;height:150px;flex-shrink:0;margin-bottom:24px">
+      <div id="calib-book-fallback" style="position:absolute;inset:0;border-radius:20px;background:radial-gradient(ellipse 70% 82% at 50% 42%,rgba(223,131,46,.52) 0%,rgba(124,48,96,.36) 52%,rgba(74,26,56,.18) 80%,transparent 100%);animation:calib-glow-pulse 2s ease-in-out infinite"></div>
       <img data-src="calibration_book.png" alt="" id="calib-book-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;opacity:0" onload="this.style.opacity='1';var f=document.getElementById('calib-book-fallback');if(f)f.style.display='none'">
     </div>
 
     <!-- Single fading message -->
-    <p id="calib-message" style="font-family:'Newsreader',serif;font-style:italic;font-size:20px;color:rgba(245,208,148,.9);text-align:center;line-height:1.45;min-height:64px;max-width:280px;transition:opacity .4s ease;opacity:0"></p>
+    <p id="calib-message" style="font-family:'Newsreader',serif;font-style:italic;font-size:20px;color:rgba(245,208,148,.9);text-align:center;line-height:1.38;min-height:58px;max-width:280px;transition:opacity .4s ease;opacity:0;margin:0"></p>
+    <p id="calib-progress-label" style="font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;color:rgba(223,131,46,.70);text-align:center;margin:8px 0 0;min-height:16px"></p>
 
     <!-- Progress bar -->
-    <div style="margin-top:28px;width:100%;max-width:200px;height:2px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden">
+    <div style="margin-top:14px;width:100%;max-width:200px;height:2px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden">
       <div id="calib-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(124,48,96,.75),rgba(223,131,46,.85));border-radius:999px;transition:width 1.4s ease"></div>
     </div>
 
@@ -1791,10 +1826,16 @@ async function runValidation() {
 }
 
 function showUploadError(msg) {
-  const errEl = document.getElementById('ob-upload-error');
-  const msgEl = document.getElementById('ob-upload-error-msg');
-  if (msgEl) msgEl.textContent = msg;
-  if (errEl) errEl.style.display = 'block';
+  goTo('onboarding-upload');
+  const modal = document.getElementById('ob-error-modal');
+  const body = document.getElementById('ob-error-body');
+  if (body) body.textContent = msg;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeUploadErrorModal() {
+  const modal = document.getElementById('ob-error-modal');
+  if (modal) modal.style.display = 'none';
   goTo('onboarding-upload');
 }
 
@@ -1868,13 +1909,11 @@ function checkLibrarySize(ratedCount) {
       '<button class="auth-btn auth-btn-primary" style="width:100%" onclick="proceedToUpload()">Proceed anyway</button>' +
       '<button class="auth-btn auth-btn-ghost"   style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
   } else {
-    if (el('ob-check-icon'))  { el('ob-check-icon').textContent = 'block'; el('ob-check-icon').style.color = 'rgba(170,40,64,.65)'; }
-    if (el('ob-check-title')) el('ob-check-title').textContent = 'Not enough rated books';
-    if (el('ob-check-body'))  el('ob-check-body').textContent  =
+    showUploadError(
       'Inkling needs at least 50 rated books to begin. Add more rated reads to your library, then upload it again.' +
-      (_ob_assumed_all_read ? ' No status column was found, so Inkling treated every row as a finished book.' : '');
-    if (el('ob-check-buttons')) el('ob-check-buttons').innerHTML =
-      '<button class="auth-btn auth-btn-ghost" style="width:100%" onclick="goTo(\'onboarding-upload\')">Go back</button>';
+      (_ob_assumed_all_read ? ' No status column was found, so Inkling treated every row as a finished book.' : '')
+    );
+    return;
   }
 
   goTo('onboarding-library-check');
@@ -1922,6 +1961,7 @@ var _calibHeartbeatTimer = null;
 var _calibLastServerAt = 0;
 var _calibHeartbeatIdx = 0;
 var _calibDisplayedPct = 0;
+var _calibMessageQueue = Promise.resolve();
 
 var _CALIB_PHASE_PCT = {
   counting: 0.08, validation: 0.14, authors: 0.20,
@@ -1940,10 +1980,9 @@ var _CALIB_HEARTBEAT_MESSAGES = [
   'Letting your library come into focus…'
 ];
 
-function _calibMessageWithPct(text) {
-  var pct = Math.max(0, Math.min(99, Math.round(_calibDisplayedPct * 100)));
-  if (!pct || /%$/.test(text)) return text;
-  return text + ' ' + pct + '%';
+function _calibProgressText() {
+  var pct = Math.max(0, Math.min(100, Math.round(_calibDisplayedPct * 100)));
+  return pct ? pct + '%' : '';
 }
 
 function _calibStartHeartbeat() {
@@ -1951,10 +1990,12 @@ function _calibStartHeartbeat() {
   _calibLastServerAt = Date.now();
   _calibHeartbeatIdx = 0;
   _calibDisplayedPct = 0;
+  _calibMessageQueue = Promise.resolve();
+  _calibUpdateProgress(0);
   _calibHeartbeatTimer = setInterval(function() {
     if (Date.now() - _calibLastServerAt < 4500) return;
     _calibHeartbeatIdx = (_calibHeartbeatIdx + 1) % _CALIB_HEARTBEAT_MESSAGES.length;
-    _calibShowMessage(_calibMessageWithPct(_CALIB_HEARTBEAT_MESSAGES[_calibHeartbeatIdx]), 1200);
+    _calibQueueMessage(_CALIB_HEARTBEAT_MESSAGES[_calibHeartbeatIdx], 1200);
   }, 5000);
 }
 
@@ -1965,9 +2006,12 @@ function _calibStopHeartbeat() {
 
 function _calibInitMessage(text) {
   var msgEl = document.getElementById('calib-message');
-  if (!msgEl) return;
-  msgEl.textContent = text;
-  msgEl.style.opacity = '1';
+  if (msgEl) {
+    msgEl.textContent = text;
+    msgEl.style.opacity = '1';
+  }
+  var pctEl = document.getElementById('calib-progress-label');
+  if (pctEl) pctEl.textContent = '';
 }
 
 // Returns a Promise — NOT async.
@@ -1984,10 +2028,19 @@ function _calibShowMessage(text, holdMs) {
   });
 }
 
+function _calibQueueMessage(text, holdMs) {
+  _calibMessageQueue = _calibMessageQueue.then(function() {
+    return _calibShowMessage(text, holdMs || 1200);
+  });
+  return _calibMessageQueue;
+}
+
 function _calibUpdateProgress(pct) {
   _calibDisplayedPct = Math.max(_calibDisplayedPct || 0, pct || 0);
   var bar = document.getElementById('calib-progress-bar');
   if (bar) bar.style.width = (_calibDisplayedPct * 100) + '%';
+  var label = document.getElementById('calib-progress-label');
+  if (label) label.textContent = _calibProgressText();
 }
 
 function populateRevealScreen(profile) {
@@ -2055,7 +2108,7 @@ function showFallbackCalibration() {
   var msgs = [
     'Letting your library come into focus…',
     'Almost there — finishing your reading profile.',
-    'Your Inkling is ready.'
+    'Your reading profile is ready.'
   ];
   var chain = Promise.resolve();
   msgs.forEach(function(msg, i) {
@@ -2088,8 +2141,6 @@ function startCalibrationStream(token, mode) {
   var headers = {};
   if (token) headers['Authorization'] = 'Bearer ' + token;
 
-  var msgQueue = Promise.resolve();
-
   fetch(url, { headers: headers }).then(function(resp) {
     if (!resp.ok || !resp.body) throw new Error('stream-open-failed');
     var reader = resp.body.getReader();
@@ -2108,9 +2159,9 @@ function startCalibrationStream(token, mode) {
               var payload = JSON.parse(rawData);
               if (evt === 'done') {
                 _calibStopHeartbeat();
-                msgQueue = msgQueue.then(function() {
-                  _calibUpdateProgress(1.0);
-                  return _calibShowMessage('Your Inkling is ready.', 2200);
+                _calibUpdateProgress(1.0);
+                _calibMessageQueue = _calibMessageQueue.then(function() {
+                  return _calibShowMessage('Your reading profile is ready.', 2200);
                 }).then(function() {
                   var wrap = document.getElementById('calib-book-wrap');
                   if (wrap) wrap.classList.add('calib-done');
@@ -2121,13 +2172,13 @@ function startCalibrationStream(token, mode) {
                 });
               } else if (evt === 'calibration_message') {
                 _calibLastServerAt = Date.now();
-                msgQueue = msgQueue.then(function() {
-                  _calibUpdateProgress(payload.progress || _CALIB_PHASE_PCT[payload.phase] || 0);
-                  return _calibShowMessage(_calibMessageWithPct(payload.text), payload.delay_after_ms || 1200);
+                _calibUpdateProgress(payload.progress || _CALIB_PHASE_PCT[payload.phase] || 0);
+                _calibMessageQueue = _calibMessageQueue.then(function() {
+                  return _calibShowMessage(payload.text, payload.delay_after_ms || 1200);
                 });
               } else if (evt === 'error') {
                 _calibStopHeartbeat();
-                msgQueue = msgQueue.then(function() {
+                _calibMessageQueue = _calibMessageQueue.then(function() {
                   showFallbackCalibration();
                   return Promise.resolve();
                 });
@@ -2142,7 +2193,7 @@ function startCalibrationStream(token, mode) {
     function readLoop() {
       return reader.read().then(function(result) {
         if (_calibStreamAborted) return;
-        if (result.done) return msgQueue;
+        if (result.done) return _calibMessageQueue;
         buffer += decoder.decode(result.value, { stream: true });
         var lines = buffer.split('\n');
         buffer = lines.pop();

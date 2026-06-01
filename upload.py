@@ -110,10 +110,14 @@ COLUMN_ALIASES: dict[str, list[str]] = {
     'ISBN': [
         'isbn', 'isbn13', 'isbn_13', 'isbn 13', 'barcode', 'ean',
     ],
+    'Average Rating': [
+        'average rating', 'average_rating', 'avg rating', 'avg_rating',
+        'goodreads average', 'goodreads avg', 'community rating',
+    ],
 }
 
 REQUIRED_FIELDS  = ['Title', 'Author', 'My Rating']
-OPTIONAL_FIELDS  = ['Exclusive Shelf', 'Date Read', 'ISBN']
+OPTIONAL_FIELDS  = ['Exclusive Shelf', 'Date Read', 'ISBN', 'Average Rating']
 GOODREADS_EXACT  = {'Title', 'Author', 'Exclusive Shelf', 'My Rating', 'Date Read',
                     'ISBN', 'ISBN13', 'Author l-f'}
 READ_STATUS_VALUES = {'read', 'finished', 'complete', 'completed', 'done'}
@@ -205,6 +209,11 @@ def _df_to_books(df: pd.DataFrame, column_map: dict[str, str]) -> list[dict]:
         except (ValueError, TypeError):
             rating = 0.0
 
+        try:
+            gr_avg = float(row.get(column_map.get('Average Rating', 'Average Rating'), 0) or 0)
+        except (ValueError, TypeError):
+            gr_avg = 0.0
+
         isbn_col  = column_map.get('ISBN', 'ISBN')
         date_col  = column_map.get('Date Read', 'Date Read')
 
@@ -220,6 +229,7 @@ def _df_to_books(df: pd.DataFrame, column_map: dict[str, str]) -> list[dict]:
             'date_read':   date_read,
             'isbn':        isbn,
             'shelf':       shelf,
+            'gr_avg':      gr_avg if gr_avg > 0 else None,
         })
     return books
 
@@ -580,7 +590,7 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
 
     if not calib_task.done() or 'Almost there' not in mid_messages[-1]:
         # Ensure completion message shown if loop exited early
-        yield _sse('Almost there — finalizing your taste profile')
+        yield _sse('Almost there — finishing your reading profile')
         await asyncio.sleep(0.8)
 
     # ── Store results to DB ───────────────────────────────────────────────────
@@ -590,7 +600,7 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
         yield _sse(json.dumps({'error': f'Failed to save profile: {e}'}), event='error')
         return
 
-    yield _sse('Your Inkling is ready')
+    yield _sse('Your reading profile is ready')
     await asyncio.sleep(0.5)
 
     taste = weights.get('taste_summary', '')
@@ -761,6 +771,7 @@ async def upload_library(
             date_read   = b['date_read'],
             isbn        = b['isbn'],
             shelf       = b['shelf'],
+            gr_avg      = b.get('gr_avg'),
         ))
 
     db.commit()

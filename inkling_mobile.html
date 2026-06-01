@@ -1962,6 +1962,8 @@ var _calibLastServerAt = 0;
 var _calibHeartbeatIdx = 0;
 var _calibDisplayedPct = 0;
 var _calibMessageQueue = Promise.resolve();
+var _calibMessageBusy = false;
+var _calibPendingMessage = null;
 
 var _CALIB_PHASE_PCT = {
   counting: 0.08, validation: 0.14, authors: 0.20,
@@ -1991,6 +1993,8 @@ function _calibStartHeartbeat() {
   _calibHeartbeatIdx = 0;
   _calibDisplayedPct = 0;
   _calibMessageQueue = Promise.resolve();
+  _calibMessageBusy = false;
+  _calibPendingMessage = null;
   _calibUpdateProgress(0);
   _calibHeartbeatTimer = setInterval(function() {
     if (Date.now() - _calibLastServerAt < 4500) return;
@@ -2028,11 +2032,39 @@ function _calibShowMessage(text, holdMs) {
   });
 }
 
-function _calibQueueMessage(text, holdMs) {
-  _calibMessageQueue = _calibMessageQueue.then(function() {
-    return _calibShowMessage(text, holdMs || 1200);
+function _calibDrainMessages() {
+  var item = _calibPendingMessage;
+  if (!item) {
+    _calibMessageBusy = false;
+    return;
+  }
+  _calibPendingMessage = null;
+  _calibMessageBusy = true;
+  _calibShowMessage(item.text, item.holdMs || 1200).then(function() {
+    item.resolve();
+    _calibDrainMessages();
   });
-  return _calibMessageQueue;
+}
+
+function _calibQueueMessage(text, holdMs, priority) {
+  return new Promise(function(resolve) {
+    if (_calibMessageBusy && !priority) {
+      resolve();
+      return;
+    }
+    if (_calibPendingMessage && _calibPendingMessage.resolve) {
+      _calibPendingMessage.resolve();
+    }
+    _calibPendingMessage = { text: text, holdMs: holdMs || 1200, resolve: resolve };
+    if (!_calibMessageBusy) _calibDrainMessages();
+  });
+}
+
+function _calibClearQueuedMessages() {
+  if (_calibPendingMessage && _calibPendingMessage.resolve) {
+    _calibPendingMessage.resolve();
+  }
+  _calibPendingMessage = null;
 }
 
 function _calibUpdateProgress(pct) {
@@ -2105,6 +2137,7 @@ function populateRevealScreen(profile) {
 
 function showFallbackCalibration() {
   _calibStopHeartbeat();
+  _calibClearQueuedMessages();
   var msgs = [
     'Letting your library come into focus…',
     'Almost there — finishing your reading profile.',
@@ -2113,7 +2146,7 @@ function showFallbackCalibration() {
   var chain = Promise.resolve();
   msgs.forEach(function(msg, i) {
     chain = chain.then(function() {
-      return _calibShowMessage(msg, i === msgs.length - 1 ? 2000 : 1800);
+      return _calibQueueMessage(msg, i === msgs.length - 1 ? 2000 : 1800, true);
     });
   });
   chain.then(function() {
@@ -2159,10 +2192,9 @@ function startCalibrationStream(token, mode) {
               var payload = JSON.parse(rawData);
               if (evt === 'done') {
                 _calibStopHeartbeat();
+                _calibClearQueuedMessages();
                 _calibUpdateProgress(1.0);
-                _calibMessageQueue = _calibMessageQueue.then(function() {
-                  return _calibShowMessage('Your reading profile is ready.', 2200);
-                }).then(function() {
+                _calibMessageQueue = _calibQueueMessage('Your reading profile is ready.', 2200, true).then(function() {
                   var wrap = document.getElementById('calib-book-wrap');
                   if (wrap) wrap.classList.add('calib-done');
                   setTimeout(function() {
@@ -2173,12 +2205,11 @@ function startCalibrationStream(token, mode) {
               } else if (evt === 'calibration_message') {
                 _calibLastServerAt = Date.now();
                 _calibUpdateProgress(payload.progress || _CALIB_PHASE_PCT[payload.phase] || 0);
-                _calibMessageQueue = _calibMessageQueue.then(function() {
-                  return _calibShowMessage(payload.text, payload.delay_after_ms || 1200);
-                });
+                _calibMessageQueue = _calibQueueMessage(payload.text, payload.delay_after_ms || 1200, true);
               } else if (evt === 'error') {
                 _calibStopHeartbeat();
-                _calibMessageQueue = _calibMessageQueue.then(function() {
+                _calibClearQueuedMessages();
+                _calibMessageQueue = _calibQueueMessage('Letting your library come into focus…', 800, true).then(function() {
                   showFallbackCalibration();
                   return Promise.resolve();
                 });

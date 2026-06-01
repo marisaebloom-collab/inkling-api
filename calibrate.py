@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import math
 import os
-import time
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -458,6 +457,79 @@ Return this JSON filled in:
         return {}
 
 
+def _empty_tag_template() -> dict:
+    template = {}
+    for t in RISK_TAGS + REWARD_TAGS + VIBE_TAGS + TROPE_TAGS:
+        template[t] = 0
+    template['critical_reception'] = 0
+    template['G0_Genre'] = ''
+    template['G1_Subgenre'] = ''
+    return template
+
+
+def _tag_books_batch_with_claude(book_payloads: list[dict]) -> dict[int, dict]:
+    """Tag a small batch of books in one model call. Returns {local_id: tags}."""
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key or not book_payloads:
+        return {}
+
+    template = _empty_tag_template()
+    books = []
+    for item in book_payloads:
+        year_note = f" ({item['publication_year']})" if item.get('publication_year') else ""
+        gr_note = f", Goodreads avg {item['gr_avg']:.2f}" if item.get('gr_avg') else ""
+        desc = (item.get('description') or '')[:500]
+        books.append({
+            'id': item['id'],
+            'title': item['title'],
+            'author': item['author'],
+            'context': f"{year_note}{gr_note}".strip(),
+            'description': desc,
+        })
+
+    prompt = f"""Tag these books for a personalized recommendation algorithm. Return JSON only — no preamble.
+
+For each book, return an object with the same id and a tags object filled from the template.
+Set 0/1 for binary tags, integer 0-3 for critical_reception, string for G0/G1.
+Only tag what you have genuine evidence for. Default 0 when uncertain.
+
+Template:
+{json.dumps(template, indent=2)}
+
+Books:
+{json.dumps(books, ensure_ascii=False, indent=2)}
+
+Return shape:
+{{"books":[{{"id":123,"tags":{{...}}}}]}}"""
+
+    client = anthropic.Anthropic(api_key=api_key)
+    try:
+        msg = client.messages.create(
+            model='claude-sonnet-4-6',
+            max_tokens=8192,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        raw = msg.content[0].text.strip()
+        start = raw.find('{')
+        end = raw.rfind('}') + 1
+        if start == -1 or end == 0:
+            return {}
+        parsed = json.loads(raw[start:end])
+        result = {}
+        for row in parsed.get('books', []):
+            try:
+                local_id = int(row.get('id'))
+                tags = row.get('tags') or {}
+                if isinstance(tags, dict):
+                    result[local_id] = tags
+            except Exception:
+                continue
+        return result
+    except Exception as e:
+        print(f'[CALIBRATE] Batch tag error: {e}')
+        return {}
+
+
 def _fetch_metadata(title: str, isbn: str | None):
     """Fetch gr_avg, description, cover, year from Google Books / Open Library."""
     # Import here to avoid circular import with main.py
@@ -673,8 +745,9 @@ def _stream_calibration(user: User, db: Session, mode: str):
         tagging_msgs = _tagging_messages(0.0, None)
         yield _sse_msg('tagging', tagging_msgs[0], 1500, 0.24)
 
-        # Tag each book — cache check first, then Claude if needed
+        # Tag each book — cache check first, then batch the uncached books.
         tag_dicts: dict[int, dict] = {}  # book.id -> tag dict
+        pending_books: list[dict] = []
         progress_msgs = [
             "Noting your taste patterns…",
             "Looking for repeat favorite authors…",
@@ -685,7 +758,6 @@ def _stream_calibration(user: User, db: Session, mode: str):
             "Listening for your quiet preferences…",
             "Letting your library come into focus…",
         ]
-        last_progress_emit = time.monotonic()
         progress_msg_idx = 0
 
         for i, b in enumerate(rated):
@@ -712,57 +784,76 @@ def _stream_calibration(user: User, db: Session, mode: str):
             if cached and cached.tags:
                 try:
                     tag_dicts[b.id] = json.loads(cached.tags)
-                    if b.gr_avg is None and cached.cover_url:
-                        pass  # gr_avg not stored in BookTags — skip
                 except Exception:
                     pass
 
             if b.id not in tag_dicts:
-                # Fetch metadata if gr_avg missing
-                meta = None
-                if b.gr_avg is None:
-                    meta = _fetch_metadata(b.title, b.isbn)
-                    if meta and meta.get('gr_avg'):
-                        b.gr_avg = meta['gr_avg']
-                        db.flush()
-
-                description = ''
-                pub_year = None
-                cover_url = ''
-                if meta:
-                    description = meta.get('description', '') or ''
-                    pub_year = meta.get('publication_year') or meta.get('year')
-                    cover_url = meta.get('cover_url', '') or ''
-
-                tags = _tag_book_with_claude(b.title, b.author, description, b.gr_avg or 3.5, pub_year)
-                if tags:
-                    tag_dicts[b.id] = tags
-                    bt = BookTags(
-                        isbn=b.isbn,
-                        title=b.title,
-                        author=b.author,
-                        tags=json.dumps(tags),
-                        critical_reception=tags.get('critical_reception'),
-                        cover_url=cover_url,
-                        description=description[:2000] if description else None,
-                        publication_year=pub_year,
-                        model_version='claude-sonnet-4-6',
-                    )
-                    db.add(bt)
-                    db.flush()
+                pending_books.append({
+                    'book': b,
+                    'payload': {
+                        'id': b.id,
+                        'title': b.title,
+                        'author': b.author,
+                        'description': '',
+                        'gr_avg': b.gr_avg or 3.5,
+                        'publication_year': b.date_read,
+                    },
+                })
 
             pct = (i + 1) / max(n_rated, 1)
-            if time.monotonic() - last_progress_emit >= 5:
+            if i == len(rated) - 1 or i % 25 == 24:
                 progress_msg_idx = (progress_msg_idx + 1) % len(progress_msgs)
                 yield _sse_msg(
                     'tagging',
                     progress_msgs[progress_msg_idx],
                     1200,
-                    0.24 + (0.44 * pct),
+                    0.24 + (0.16 * pct),
                 )
-                last_progress_emit = time.monotonic()
 
-        yield _sse_msg('tagging', "Letting your library come into focus…", 1200, 0.68)
+        batch_size = 5
+        total_pending = len(pending_books)
+        processed_pending = 0
+        for start in range(0, total_pending, batch_size):
+            group = pending_books[start:start + batch_size]
+            batch_tags = _tag_books_batch_with_claude([item['payload'] for item in group])
+            if len(batch_tags) < len(group):
+                retry_tags = _tag_books_batch_with_claude([
+                    item['payload'] for item in group
+                    if item['payload']['id'] not in batch_tags
+                ])
+                batch_tags.update(retry_tags)
+
+            for item in group:
+                b = item['book']
+                tags = batch_tags.get(b.id)
+                if tags:
+                    tag_dicts[b.id] = tags
+                    db.add(BookTags(
+                        isbn=b.isbn,
+                        title=b.title,
+                        author=b.author,
+                        tags=json.dumps(tags),
+                        critical_reception=tags.get('critical_reception'),
+                        cover_url='',
+                        description=None,
+                        publication_year=b.date_read,
+                        model_version='claude-sonnet-4-6-batch',
+                    ))
+
+            db.flush()
+            processed_pending += len(group)
+            progress_msg_idx = (progress_msg_idx + 1) % len(progress_msgs)
+            progress_base = 0.40
+            progress_span = 0.44
+            progress_pct = 1.0 if total_pending == 0 else processed_pending / total_pending
+            yield _sse_msg(
+                'tagging',
+                progress_msgs[progress_msg_idx],
+                1200,
+                progress_base + (progress_span * progress_pct),
+            )
+
+        yield _sse_msg('tagging', "Letting your library come into focus…", 1200, 0.84)
         db.commit()
 
         # ── Phase 5: Pattern detection ─────────────────────────────────────────

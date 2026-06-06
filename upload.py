@@ -110,18 +110,12 @@ COLUMN_ALIASES: dict[str, list[str]] = {
     'ISBN': [
         'isbn', 'isbn13', 'isbn_13', 'isbn 13', 'barcode', 'ean',
     ],
-    'Average Rating': [
-        'average rating', 'average_rating', 'avg rating', 'avg_rating',
-        'goodreads average', 'goodreads avg', 'community rating',
-    ],
 }
 
-REQUIRED_FIELDS  = ['Title', 'Author', 'My Rating']
-OPTIONAL_FIELDS  = ['Exclusive Shelf', 'Date Read', 'ISBN', 'Average Rating']
+REQUIRED_FIELDS  = ['Title', 'Author', 'Exclusive Shelf', 'My Rating']
+OPTIONAL_FIELDS  = ['Date Read', 'ISBN']
 GOODREADS_EXACT  = {'Title', 'Author', 'Exclusive Shelf', 'My Rating', 'Date Read',
                     'ISBN', 'ISBN13', 'Author l-f'}
-READ_STATUS_VALUES = {'read', 'finished', 'complete', 'completed', 'done'}
-DNF_STATUS_VALUES = {'did-not-finish', 'did not finish', 'dnf', 'abandoned'}
 
 
 def _normalize_col(name: str) -> str:
@@ -200,19 +194,12 @@ def _df_to_books(df: pd.DataFrame, column_map: dict[str, str]) -> list[dict]:
         if not title or not author:
             continue
 
-        shelf_col = column_map.get('Exclusive Shelf')
-        raw_shelf = row.get(shelf_col, '') if shelf_col else ''
-        shelf = _normalize_shelf_value(raw_shelf, default='read' if not shelf_col else '')
+        shelf = str(row.get(column_map.get('Exclusive Shelf', 'Exclusive Shelf'), '') or '').strip()
 
         try:
             rating = float(row.get(column_map.get('My Rating', 'My Rating'), 0) or 0)
         except (ValueError, TypeError):
             rating = 0.0
-
-        try:
-            gr_avg = float(row.get(column_map.get('Average Rating', 'Average Rating'), 0) or 0)
-        except (ValueError, TypeError):
-            gr_avg = 0.0
 
         isbn_col  = column_map.get('ISBN', 'ISBN')
         date_col  = column_map.get('Date Read', 'Date Read')
@@ -229,7 +216,6 @@ def _df_to_books(df: pd.DataFrame, column_map: dict[str, str]) -> list[dict]:
             'date_read':   date_read,
             'isbn':        isbn,
             'shelf':       shelf,
-            'gr_avg':      gr_avg if gr_avg > 0 else None,
         })
     return books
 
@@ -255,42 +241,6 @@ def _parse_year(date_str: str) -> int | None:
         return None
 
 
-def _normalize_shelf_value(value: str, default: str = '') -> str:
-    shelf = str(value or '').strip().lower()
-    if not shelf:
-        return default
-    shelf = shelf.replace('_', '-')
-    if shelf in READ_STATUS_VALUES:
-        return 'read'
-    if shelf in DNF_STATUS_VALUES:
-        return 'did-not-finish'
-    return shelf
-
-
-def _count_usable_rows(df: pd.DataFrame, column_map: dict[str, str]) -> tuple[int, int]:
-    shelf_col = column_map.get('Exclusive Shelf')
-    rating_col = column_map.get('My Rating')
-    read_count = 0
-    rated_count = 0
-
-    for _, row in df.iterrows():
-        shelf = _normalize_shelf_value(
-            row.get(shelf_col, '') if shelf_col else '',
-            default='read' if not shelf_col else ''
-        )
-        try:
-            rating = float(row.get(rating_col, 0) or 0)
-        except (ValueError, TypeError):
-            rating = 0.0
-
-        if shelf == 'read':
-            read_count += 1
-        if shelf in {'read', 'did-not-finish'} and rating > 0:
-            rated_count += 1
-
-    return read_count, rated_count
-
-
 def parse_goodreads_csv(content: bytes) -> list[dict]:
     """Parse a Goodreads export CSV into a list of normalised book dicts."""
     text   = content.decode('utf-8-sig')
@@ -303,7 +253,7 @@ def parse_goodreads_csv(content: bytes) -> list[dict]:
         if not title or not author:
             continue
 
-        shelf = _normalize_shelf_value(row.get('Exclusive Shelf') or '', default='read')
+        shelf = (row.get('Exclusive Shelf') or '').strip()
         try:
             rating = float((row.get('My Rating') or '0').strip())
         except ValueError:
@@ -534,27 +484,27 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
     read_count = len(read_books)
 
     # ── Pre-calibration messages (real data) ──────────────────────────────────
-    yield _sse('Reading your library…')
+    yield _sse(f'Reading your library… {read_count} books found')
     await asyncio.sleep(1.0)
 
     author_rows = _aggregate_authors(book_dicts)
     loved_count = sum(1 for a in author_rows if a['avg_rating'] >= 4.0)
 
-    yield _sse('Looking for repeat favorite authors…')
+    yield _sse(f'You’ve read {loved_count} authors you consistently love')
     await asyncio.sleep(1.0)
 
-    yield _sse('Looking for repeat favorite authors…')
+    yield _sse('Finding your most-read authors…')
     await asyncio.sleep(0.7)
 
     top_authors = sorted(author_rows, key=lambda a: a['books_read'], reverse=True)[:2]
     for a in top_authors:
-        yield _sse('Finding the books that left a mark…')
+        yield _sse(f'{a["author_name"]}: {a["books_read"]} books, avg {a["avg_rating"]}★')
         await asyncio.sleep(1.2)
 
-    yield _sse('Noting your taste patterns…')
+    yield _sse('Tagging your top-rated reads first…')
     await asyncio.sleep(0.8)
 
-    yield _sse('Checking what you loved and what lost you…')
+    yield _sse('Detecting your taste patterns…')
     await asyncio.sleep(0.8)
 
     # ── Start Claude calibration in background thread ─────────────────────────
@@ -568,9 +518,9 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
 
     # Interleave synthetic messages while Claude thinks
     mid_messages = [
-        'Walking the shelves of your library…',
-        'Illuminating the aisles of the stacks…',
-        'Almost there — finishing your reading profile',
+        'Analyzing your riskier reads…',
+        'Building your personal algorithm…',
+        'Almost there — finalizing your taste profile',
     ]
     for msg in mid_messages:
         if calib_task.done():
@@ -590,7 +540,7 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
 
     if not calib_task.done() or 'Almost there' not in mid_messages[-1]:
         # Ensure completion message shown if loop exited early
-        yield _sse('Almost there — finishing your reading profile')
+        yield _sse('Almost there — finalizing your taste profile')
         await asyncio.sleep(0.8)
 
     # ── Store results to DB ───────────────────────────────────────────────────
@@ -600,7 +550,7 @@ async def _calibrate_stream_generator(user_id: int, db: Session):
         yield _sse(json.dumps({'error': f'Failed to save profile: {e}'}), event='error')
         return
 
-    yield _sse('Your reading profile is ready')
+    yield _sse('Your Inkling is ready')
     await asyncio.sleep(0.5)
 
     taste = weights.get('taste_summary', '')
@@ -681,28 +631,25 @@ async def validate_library(file: UploadFile = File(...)):
             'valid':      False,
             'error_code': 'missing_columns',
             'missing':    missing_required,
-            'required':   REQUIRED_FIELDS,
-            'columns':    list(df.columns),
             'read_count': 0,
-            'rated_count': 0,
         }
 
-    # 5. Usable rated books present
-    read_count, rated_count = _count_usable_rows(df, column_map)
+    # 5. Read-shelf books present
+    shelf_col = column_map.get('Exclusive Shelf')
+    read_count = 0
+    if shelf_col and shelf_col in df.columns:
+        read_count = int((df[shelf_col].astype(str).str.lower() == 'read').sum())
 
-    if rated_count == 0:
+    if read_count == 0:
         return {
             'valid':      False,
-            'error_code': 'no_rated_books',
+            'error_code': 'no_read_shelf',
             'read_count': 0,
-            'rated_count': 0,
         }
 
     return {
         'valid':      True,
         'read_count': read_count,
-        'rated_count': rated_count,
-        'assumed_all_read': 'Exclusive Shelf' not in column_map,
         'column_map': column_map,
         'ambiguous':  ambiguous,
     }
@@ -745,7 +692,7 @@ async def upload_library(
         raise HTTPException(
             400,
             f'Could not find required columns: {", ".join(missing_required)}. '
-            'Required fields are Title, Author, and Rating.'
+            'Check the instructions for the expected column names.'
         )
 
     # Use best-guess for ambiguous columns (user already confirmed via /validate flow).
@@ -771,13 +718,12 @@ async def upload_library(
             date_read   = b['date_read'],
             isbn        = b['isbn'],
             shelf       = b['shelf'],
-            gr_avg      = b.get('gr_avg'),
         ))
 
     db.commit()
 
     read_count  = sum(1 for b in books if b['shelf'] == 'read')
-    rated_count = sum(1 for b in books if b['shelf'] in {'read', 'did-not-finish'} and b['user_rating'])
+    rated_count = sum(1 for b in books if b['user_rating'])
 
     return {
         'ok':          True,

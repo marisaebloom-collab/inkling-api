@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import time
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -122,11 +123,10 @@ def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
 
-def _sse_msg(phase: str, text: str, delay_after_ms: int, progress: float | None = None) -> str:
-    payload = {'phase': phase, 'text': text, 'delay_after_ms': delay_after_ms}
-    if progress is not None:
-        payload['progress'] = max(0.0, min(0.99, progress))
-    return _sse_event('calibration_message', payload)
+def _sse_msg(phase: str, text: str, delay_after_ms: int) -> str:
+    return _sse_event('calibration_message', {
+        'phase': phase, 'text': text, 'delay_after_ms': delay_after_ms,
+    })
 
 
 # ── Computation helpers ───────────────────────────────────────────────────────
@@ -457,79 +457,6 @@ Return this JSON filled in:
         return {}
 
 
-def _empty_tag_template() -> dict:
-    template = {}
-    for t in RISK_TAGS + REWARD_TAGS + VIBE_TAGS + TROPE_TAGS:
-        template[t] = 0
-    template['critical_reception'] = 0
-    template['G0_Genre'] = ''
-    template['G1_Subgenre'] = ''
-    return template
-
-
-def _tag_books_batch_with_claude(book_payloads: list[dict]) -> dict[int, dict]:
-    """Tag a small batch of books in one model call. Returns {local_id: tags}."""
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-    if not api_key or not book_payloads:
-        return {}
-
-    template = _empty_tag_template()
-    books = []
-    for item in book_payloads:
-        year_note = f" ({item['publication_year']})" if item.get('publication_year') else ""
-        gr_note = f", Goodreads avg {item['gr_avg']:.2f}" if item.get('gr_avg') else ""
-        desc = (item.get('description') or '')[:500]
-        books.append({
-            'id': item['id'],
-            'title': item['title'],
-            'author': item['author'],
-            'context': f"{year_note}{gr_note}".strip(),
-            'description': desc,
-        })
-
-    prompt = f"""Tag these books for a personalized recommendation algorithm. Return JSON only — no preamble.
-
-For each book, return an object with the same id and a tags object filled from the template.
-Set 0/1 for binary tags, integer 0-3 for critical_reception, string for G0/G1.
-Only tag what you have genuine evidence for. Default 0 when uncertain.
-
-Template:
-{json.dumps(template, indent=2)}
-
-Books:
-{json.dumps(books, ensure_ascii=False, indent=2)}
-
-Return shape:
-{{"books":[{{"id":123,"tags":{{...}}}}]}}"""
-
-    client = anthropic.Anthropic(api_key=api_key)
-    try:
-        msg = client.messages.create(
-            model='claude-sonnet-4-6',
-            max_tokens=8192,
-            messages=[{'role': 'user', 'content': prompt}],
-        )
-        raw = msg.content[0].text.strip()
-        start = raw.find('{')
-        end = raw.rfind('}') + 1
-        if start == -1 or end == 0:
-            return {}
-        parsed = json.loads(raw[start:end])
-        result = {}
-        for row in parsed.get('books', []):
-            try:
-                local_id = int(row.get('id'))
-                tags = row.get('tags') or {}
-                if isinstance(tags, dict):
-                    result[local_id] = tags
-            except Exception:
-                continue
-        return result
-    except Exception as e:
-        print(f'[CALIBRATE] Batch tag error: {e}')
-        return {}
-
-
 def _fetch_metadata(title: str, isbn: str | None):
     """Fetch gr_avg, description, cover, year from Google Books / Open Library."""
     # Import here to avoid circular import with main.py
@@ -654,12 +581,12 @@ def _risk_message(risk_weights: dict[str, float], n_rated: int) -> str:
 
 def _tagging_messages(pct_done: float, strong_signal: str | None) -> list[str]:
     """Return narrative progress messages during the tagging phase."""
-    msgs = ["Noting your taste patterns…"]
+    msgs = ["Detecting your taste patterns across your library…"]
     if strong_signal:
-        msgs.append(f"Finding the books that left a mark…")
+        msgs.append(f"Found {strong_signal} as a recurring element in your highest-rated books.")
     else:
-        msgs.append("Looking for repeat favorite authors…")
-    msgs.append("Checking what you loved and what lost you…")
+        msgs.append("Mapping what separates your 5★ reads from the rest…")
+    msgs.append("Connecting the dots between what you love and what falls flat.")
     return msgs
 
 
@@ -677,9 +604,9 @@ def _stream_calibration(user: User, db: Session, mode: str):
         n_read = len(read_books)
 
         if recalibrate:
-            yield _sse_msg('counting', "Reading your library…", 1200, 0.08)
+            yield _sse_msg('counting', f"Updating your taste profile… {n_books} books in your library.", 1200)
         else:
-            yield _sse_msg('counting', "Reading your library…", 1200, 0.08)
+            yield _sse_msg('counting', f"Reading your library… {n_books} books found.", 1200)
 
         # ── Phase 2: Validation ────────────────────────────────────────────────
         author_avgs, author_5star, author_books_count = _build_author_maps(user_books)
@@ -694,7 +621,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
             if b.shelf == 'read' and b.author in loved_authors
         )
 
-        yield _sse_msg('validation', "Looking for repeat favorite authors…", 1200, 0.14)
+        yield _sse_msg('validation', f"{n_loved_books} books by authors you love.", 1200)
 
         # ── Phase 3: Author callouts ───────────────────────────────────────────
         # Build AuthorProfile rows
@@ -732,9 +659,11 @@ def _stream_calibration(user: User, db: Session, mode: str):
         # Top author by book count (rated)
         top_author = max(author_books_count.items(), key=lambda x: x[1], default=('', 0))
         if top_author[0]:
-            yield _sse_msg('authors', "Finding the books that left a mark…", 1500, 0.20)
+            avg = author_avgs.get(top_author[0], 0.0)
+            n = top_author[1]
+            yield _sse_msg('authors', f"{top_author[0]}: {n} books, avg {avg:.1f}★", 1500)
         else:
-            yield _sse_msg('authors', "Walking the shelves of your library…", 1500, 0.20)
+            yield _sse_msg('authors', "Mapping your most-read authors…", 1500)
 
         # ── Phase 4: Tagging ───────────────────────────────────────────────────
         # Collect rated books (the ones we need tags for)
@@ -743,22 +672,10 @@ def _stream_calibration(user: User, db: Session, mode: str):
 
         # Emit first tagging narrative message
         tagging_msgs = _tagging_messages(0.0, None)
-        yield _sse_msg('tagging', tagging_msgs[0], 1500, 0.24)
+        yield _sse_msg('tagging', tagging_msgs[0], 1500)
 
-        # Tag each book — cache check first, then batch the uncached books.
+        # Tag each book — cache check first, then Claude if needed
         tag_dicts: dict[int, dict] = {}  # book.id -> tag dict
-        pending_books: list[dict] = []
-        progress_msgs = [
-            "Noting your taste patterns…",
-            "Looking for repeat favorite authors…",
-            "Checking what you loved and what lost you…",
-            "Walking the shelves of your library…",
-            "Illuminating the aisles of the stacks…",
-            "Finding the books that left a mark…",
-            "Listening for your quiet preferences…",
-            "Letting your library come into focus…",
-        ]
-        progress_msg_idx = 0
 
         for i, b in enumerate(rated):
             # Check book_tags cache
@@ -784,76 +701,52 @@ def _stream_calibration(user: User, db: Session, mode: str):
             if cached and cached.tags:
                 try:
                     tag_dicts[b.id] = json.loads(cached.tags)
+                    if b.gr_avg is None and cached.cover_url:
+                        pass  # gr_avg not stored in BookTags — skip
                 except Exception:
                     pass
 
             if b.id not in tag_dicts:
-                pending_books.append({
-                    'book': b,
-                    'payload': {
-                        'id': b.id,
-                        'title': b.title,
-                        'author': b.author,
-                        'description': '',
-                        'gr_avg': b.gr_avg or 3.5,
-                        'publication_year': b.date_read,
-                    },
-                })
+                # Fetch metadata if gr_avg missing
+                meta = None
+                if b.gr_avg is None:
+                    meta = _fetch_metadata(b.title, b.isbn)
+                    if meta and meta.get('gr_avg'):
+                        b.gr_avg = meta['gr_avg']
+                        db.flush()
 
-            pct = (i + 1) / max(n_rated, 1)
-            if i == len(rated) - 1 or i % 25 == 24:
-                progress_msg_idx = (progress_msg_idx + 1) % len(progress_msgs)
-                yield _sse_msg(
-                    'tagging',
-                    progress_msgs[progress_msg_idx],
-                    1200,
-                    0.24 + (0.16 * pct),
-                )
+                description = ''
+                pub_year = None
+                cover_url = ''
+                if meta:
+                    description = meta.get('description', '') or ''
+                    pub_year = meta.get('publication_year') or meta.get('year')
+                    cover_url = meta.get('cover_url', '') or ''
 
-        batch_size = 10
-        total_pending = len(pending_books)
-        processed_pending = 0
-        for start in range(0, total_pending, batch_size):
-            group = pending_books[start:start + batch_size]
-            batch_tags = _tag_books_batch_with_claude([item['payload'] for item in group])
-            if len(batch_tags) < len(group):
-                retry_tags = _tag_books_batch_with_claude([
-                    item['payload'] for item in group
-                    if item['payload']['id'] not in batch_tags
-                ])
-                batch_tags.update(retry_tags)
-
-            for item in group:
-                b = item['book']
-                tags = batch_tags.get(b.id)
+                tags = _tag_book_with_claude(b.title, b.author, description, b.gr_avg or 3.5, pub_year)
                 if tags:
                     tag_dicts[b.id] = tags
-                    db.add(BookTags(
+                    bt = BookTags(
                         isbn=b.isbn,
                         title=b.title,
                         author=b.author,
                         tags=json.dumps(tags),
                         critical_reception=tags.get('critical_reception'),
-                        cover_url='',
-                        description=None,
-                        publication_year=b.date_read,
-                        model_version='claude-sonnet-4-6-batch',
-                    ))
+                        cover_url=cover_url,
+                        description=description[:2000] if description else None,
+                        publication_year=pub_year,
+                        model_version='claude-sonnet-4-6',
+                    )
+                    db.add(bt)
+                    db.flush()
 
-            db.flush()
-            processed_pending += len(group)
-            progress_msg_idx = (progress_msg_idx + 1) % len(progress_msgs)
-            progress_base = 0.40
-            progress_span = 0.44
-            progress_pct = 1.0 if total_pending == 0 else processed_pending / total_pending
-            yield _sse_msg(
-                'tagging',
-                progress_msgs[progress_msg_idx],
-                1200,
-                progress_base + (progress_span * progress_pct),
-            )
+            # Emit intermediate tagging messages at ~33% and ~66%
+            pct = (i + 1) / max(n_rated, 1)
+            if abs(pct - 0.33) < (1 / max(n_rated, 1)):
+                yield _sse_msg('tagging', tagging_msgs[1], 1200)
+            elif abs(pct - 0.66) < (1 / max(n_rated, 1)):
+                yield _sse_msg('tagging', tagging_msgs[2], 1200)
 
-        yield _sse_msg('tagging', "Letting your library come into focus…", 1200, 0.84)
         db.commit()
 
         # ── Phase 5: Pattern detection ─────────────────────────────────────────
@@ -865,16 +758,16 @@ def _stream_calibration(user: User, db: Session, mode: str):
 
         pattern_msgs = _pattern_messages(trope_lifts, vibe_lifts, DEFAULT_REWARD_WEIGHTS, n_rated)
         for msg in pattern_msgs:
-            yield _sse_msg('patterns', "Letting your library come into focus…", 1500, 0.74)
+            yield _sse_msg('patterns', msg, 1500)
 
         # ── Phase 6: Risk awareness ────────────────────────────────────────────
         reward_weights, risk_weights = _compute_rp_weights(rated, author_avgs, tag_dicts)
 
         risk_msg = _risk_message(risk_weights, n_rated)
-        yield _sse_msg('risks', "Listening for your quiet preferences…", 1500, 0.84)
+        yield _sse_msg('risks', risk_msg, 1500)
 
         # ── Phase 7: pred5 + component weights ────────────────────────────────
-        yield _sse_msg('building', 'Illuminating the aisles of the stacks…', 2000, 0.92)
+        yield _sse_msg('building', 'Building your personal algorithm…', 2000)
 
         pred5_coefficients = None
         if n_rated >= 30:
@@ -905,7 +798,7 @@ def _stream_calibration(user: User, db: Session, mode: str):
             # (simplified: just nudge weights based on correlation)
             pass  # Keep defaults for now; full multi-variate regression is future work
 
-        yield _sse_msg('building', 'Almost there — finishing your reading profile.', 1500, 0.96)
+        yield _sse_msg('building', 'Almost there — finalizing your taste profile.', 1500)
 
         # ── Phase 8: Finalize + store ──────────────────────────────────────────
         top_signals = _top_signals(trope_lifts, vibe_lifts, reward_weights)

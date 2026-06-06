@@ -564,40 +564,32 @@ background:
   padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom)) 0;
 }
 .home-bulb-img{transform:translateY(14px)}
-.home-top-spacer{flex:0 0 20.6vh;min-height:164px;max-height:186px}
+.home-top-spacer{flex:0 0 22.7vh;min-height:178px;max-height:232px}
 .home-wordmark-wrap{
-  width:48%;
-  max-width:244px;
-  aspect-ratio:782/315;
+  width:30.8%;
+  max-width:158px;
+  aspect-ratio:782/260;
   margin:0 auto;
-  overflow:hidden;
   position:relative;
 }
 .home-wordmark{
   width:100%;
   height:auto;
   display:block;
-  position:absolute;
-  left:0;
-  bottom:0;
 }
 .home-book-wrap{
-  width:72%;
-  max-width:360px;
-  aspect-ratio:1144/650;
-  margin:-1.3vh auto 0;
-  overflow:hidden;
+  width:52.8%;
+  max-width:270px;
+  aspect-ratio:1076/575;
+  margin:2.1vh auto 0;
   position:relative;
 }
 .home-book{
   width:100%;
   height:auto;
   display:block;
-  position:absolute;
-  left:0;
-  bottom:0;
 }
-.home-tagline{padding:.8vh 24px 1.2vh;text-align:center;flex-shrink:0}
+.home-tagline{padding:1vh 24px 1.4vh;text-align:center;flex-shrink:0}
 .home-tagline-main{
   font-family:'Newsreader',serif;
   font-size:clamp(22px,6vw,30px);
@@ -625,12 +617,9 @@ background:
 .home-search-surface{
   width:100%;
   aspect-ratio:1654/227;
-  border-radius:16px;
-  background:linear-gradient(0deg,rgba(83,20,48,.86) 0%,rgba(40,4,22,.96) 52%,rgba(16,0,8,.98) 100%);
-  border:1px solid rgba(223,131,46,.18);
-  box-shadow:inset 0 10px 18px rgba(0,0,0,.45),inset 0 -7px 16px rgba(255,137,40,.08),0 0 18px rgba(223,131,46,.12);
+  background:url('/static/home-search-bar.png') center/100% 100% no-repeat;
 }
-.home-search-content{position:absolute;left:58px;right:58px;top:0;bottom:2.6vh;display:flex;align-items:center;gap:13px;pointer-events:none}
+.home-search-content{display:none}
 .home-search-content .material-symbols-outlined{font-size:25px;color:#F29C22;filter:drop-shadow(0 0 8px rgba(242,156,34,.85))}
 .home-search-content span:last-child{font-family:Manrope,sans-serif;font-size:clamp(14px,4.2vw,19px);font-weight:700;color:rgba(161,94,19,.78);line-height:1}
 .home-search-hit{position:absolute;inset:0 42px 2.6vh 42px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
@@ -650,10 +639,10 @@ background:
 }
 .home-recents-empty{font-family:Manrope,sans-serif;font-size:clamp(12px,3.35vw,15px);font-weight:500;line-height:1.35;color:rgba(245,208,148,.66);margin:0;padding-top:2px}
 .home-nav{position:absolute;bottom:0;left:0;right:0;z-index:50}
-.home-nav-img{width:100%;display:block;filter:brightness(.82) saturate(.92)}
+.home-nav-img{width:100%;display:block}
 .home-nav-buttons{position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}
 .home-nav-buttons button{background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent}
-.home-nav-buttons img{height:28px;display:block;transform:translateY(6px)}
+.home-nav-buttons img{height:32px;display:block;transform:translateY(6px)}
 
 /* ── Settings page ── */
 #settings{background:#000;position:relative;overflow:hidden;padding-bottom:0}
@@ -1158,10 +1147,10 @@ window.addEventListener('unhandledrejection', function(e) {
   <main class="home-main">
     <div class="home-top-spacer"></div>
     <div class="home-wordmark-wrap" aria-label="Inkling">
-      <img class="home-wordmark" src="/static/home-wordmark.png" alt="">
+      <img class="home-wordmark" src="/static/home-wordmark-cutout.png" alt="">
     </div>
     <div class="home-book-wrap">
-      <img class="home-book" src="/static/home-book.png" aria-hidden="true">
+      <img class="home-book" src="/static/home-book-cutout.png" aria-hidden="true">
     </div>
     <div class="home-tagline">
       <p class="home-tagline-main">To read, or not to read?</p>

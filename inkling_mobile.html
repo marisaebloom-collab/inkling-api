@@ -809,7 +809,7 @@ window.addEventListener('unhandledrejection', function(e) {
   </symbol>
 </svg>
 
-<div id="persistent-hero" style="position:fixed;top:calc(env(safe-area-inset-top) + 16px);left:0;right:0;display:none;justify-content:center;pointer-events:none;z-index:2;-webkit-mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%);mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%)"><video id="hero-video" autoplay muted loop playsinline style="width:58%;max-width:220px"><source src="/static/hero-video.mp4" type="video/mp4"></video></div>
+<div id="persistent-hero" style="position:fixed;top:calc(env(safe-area-inset-top) + 16px);left:0;right:0;display:none;justify-content:center;pointer-events:none;z-index:2;-webkit-mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%);mask-image:radial-gradient(ellipse 92% 88% at 50% 50%,black 58%,transparent 100%)"><img id="hero-video" src="/static/home-book.png" style="width:58%;max-width:220px;mix-blend-mode:screen" alt=""></div>
 
 <!-- ═══ WELCOME ═══ -->
 <div id="welcome" class="screen" style="background:#000;position:relative;overflow:hidden">
@@ -1307,7 +1307,7 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ═══ LOADING ═══ -->
 <div id="loading" class="screen" style="--screen-bg:#000;align-items:center;justify-content:center">
   <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:0 32px">
-    <video autoplay muted loop playsinline style="width:72%;max-width:260px;mix-blend-mode:screen" src="/static/welcome-video.mp4"></video>
+    <img src="/static/logo-icon.png" style="width:72%;max-width:260px;mix-blend-mode:screen" alt="Inkling">
     <p id="loading-phrase" style="font-family:Newsreader,serif;font-size:18px;font-style:italic;color:rgba(184,120,64,.7);text-align:center">Checking your taste…</p>
     <div style="display:flex;gap:8px">
       <div style="width:7px;height:7px;border-radius:50%;background:#df832e;animation:bounce .9s ease-in-out infinite"></div>
@@ -1617,15 +1617,6 @@ function authLogout() {
 
 // ── Dev bypass triple-tap ──
 let _devTapCount = 0, _devTapTimer = null, _devLastInputAt = 0;
-function _updateHeroPlaceholders() {
-  const vid = document.getElementById('hero-video');
-  if (!vid) return;
-  const h = vid.offsetHeight || vid.clientHeight;
-  if (!h) return;
-  document.querySelectorAll('.hero-ph').forEach(el => { el.style.height = h + 'px'; });
-}
-window.addEventListener('resize', _updateHeroPlaceholders);
-
 function _onDevBypassTap(e) {
   if (e) {
     if (e.type === 'click' && Date.now() - _devLastInputAt < 350) return;
@@ -1664,14 +1655,6 @@ function _bindTapTarget(el, handler) {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Set placeholder heights once video dimensions are known
-  const heroVid = document.getElementById('hero-video');
-  if (heroVid) {
-    heroVid.style.pointerEvents = 'auto';
-    heroVid.addEventListener('loadedmetadata', _updateHeroPlaceholders);
-    heroVid.addEventListener('canplay', _updateHeroPlaceholders);
-    // Also try immediately in case already loaded
-    if (heroVid.readyState >= 1) _updateHeroPlaceholders();
-  }
   const hero = document.getElementById('persistent-hero');
   if (hero) hero.style.pointerEvents = 'auto';
 
@@ -3473,7 +3456,7 @@ function closeUploadHelp() {
     </div>
     <!-- Logo / Wordmark animation -->
     <div style="display:flex;flex-direction:column;align-items:center;padding:24px 24px 16px">
-      <video autoplay muted loop playsinline style="width:85%;max-width:320px;mix-blend-mode:screen;margin-bottom:4px" src="/static/success-video.mp4"></video>
+      <img src="/static/settings/settings_logo.png" style="width:85%;max-width:320px;mix-blend-mode:screen;margin-bottom:4px" alt="Inkling">
       <p style="font-family:Manrope,sans-serif;font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(223,131,46,.60);margin:0">Version 1.0</p>
     </div>
     <!-- Divider -->

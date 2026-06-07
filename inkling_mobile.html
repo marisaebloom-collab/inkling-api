@@ -105,13 +105,7 @@ background:
   justify-content:flex-start;
 }
 .login-mockup-image{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  pointer-events:none;
-  z-index:0;
+  display:none;
 }
 .login-mock-hero{
   position:absolute;
@@ -120,10 +114,10 @@ background:
   min-height:0;
   max-height:none;
   overflow:hidden;
-  z-index:5;
+  z-index:1;
 }
 .login-mock-bg,.login-mock-bulb{
-  display:none;
+  display:block;
   position:absolute;
   inset:0;
   width:100%;
@@ -145,12 +139,12 @@ background:
   user-select:none;
 }
 .login-mock-wordmark-wrap{
-  display:none;
+  display:block;
   position:absolute;
-  z-index:2;
+  z-index:3;
   left:50%;
-  top:52.6%;
-  width:38%;
+  top:36.8%;
+  width:40%;
   max-width:210px;
   aspect-ratio:782/315;
   transform:translate(-50%,-50%);
@@ -164,15 +158,15 @@ background:
   display:block;
 }
 .login-mock-book-wrap{
-  display:none;
+  display:block;
   position:absolute;
   z-index:2;
   left:50%;
-  bottom:3.8%;
-  width:70%;
+  top:45.5%;
+  width:72%;
   max-width:390px;
   aspect-ratio:1144/650;
-  transform:translateX(-50%);
+  transform:translate(-50%,-50%);
   overflow:hidden;
 }
 .login-mock-book{
@@ -192,29 +186,33 @@ background:
   align-items:center;
   position:absolute;
   inset:0;
-  z-index:3;
+  z-index:5;
 }
 .login-mock-tagline{
-  display:none;
+  display:block;
+  position:absolute;
+  left:9%;
+  right:9%;
+  top:59.5%;
   font-family:'Newsreader',serif;
-  font-size:clamp(30px,8.7vw,48px);
+  font-size:clamp(27px,7.6vw,42px);
   font-weight:500;
   font-style:italic;
   line-height:1.06;
   color:#F5D094;
   text-align:center;
-  margin:0 0 clamp(40px,7vh,74px);
+  margin:0;
   -webkit-font-smoothing:antialiased;
 }
 .login-auth-buttons{
   position:absolute;
   left:9.5%;
   right:9.5%;
-  bottom:13.6%;
+  bottom:calc(env(safe-area-inset-bottom) + 42px);
   width:auto;
   display:flex;
   flex-direction:column;
-  gap:24px;
+  gap:14px;
 }
 .login-auth-btn{
   width:100%;
@@ -222,21 +220,23 @@ background:
   min-height:56px;
   max-height:64px;
   border:0;
-  border-radius:12px;
-  background:transparent;
-  color:transparent;
+  border-radius:18px;
+  background:#fff;
+  color:#000;
   display:flex;
   align-items:center;
   justify-content:center;
   gap:14px;
   font-family:'Manrope',sans-serif;
-  font-size:clamp(19px,5.5vw,27px);
+  font-size:clamp(16px,4.7vw,21px);
   font-weight:600;
-  letter-spacing:-.01em;
+  letter-spacing:0;
   cursor:pointer;
+  box-shadow:none;
 }
 .login-auth-btn:active{opacity:.86}
-.login-auth-btn svg{width:28px;height:28px;flex-shrink:0;opacity:0}
+.login-auth-btn svg{width:24px;height:24px;flex-shrink:0;opacity:.92}
+.login-auth-btn:first-child svg path{fill:#000}
 .login-dev-card{
   display:none;
   position:absolute;
@@ -563,35 +563,39 @@ background:
   flex-direction:column;
   padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom)) 0;
 }
-.home-bulb-img{transform:translateY(30px);filter:hue-rotate(-10deg) saturate(.82) brightness(.98)}
+.home-bulb-img{transform:translateY(30px)}
 .home-top-spacer{flex:0 0 22.7vh;min-height:178px;max-height:232px}
 .home-wordmark-wrap{
   width:30.8%;
   max-width:158px;
   aspect-ratio:782/260;
   margin:0 auto;
+  overflow:hidden;
   position:relative;
 }
 .home-wordmark{
   width:100%;
   height:auto;
   display:block;
-  opacity:.92;
-  filter:contrast(.74) brightness(1.16) saturate(.90) drop-shadow(0 0 9px rgba(242,156,34,.14));
+  position:absolute;
+  left:0;
+  bottom:0;
 }
 .home-book-wrap{
   width:52.8%;
   max-width:270px;
-  aspect-ratio:1076/575;
+  aspect-ratio:1144/650;
   margin:2.1vh auto 0;
+  overflow:hidden;
   position:relative;
 }
 .home-book{
   width:100%;
   height:auto;
   display:block;
-  opacity:.94;
-  filter:contrast(.82) brightness(1.08) saturate(.92) drop-shadow(0 0 10px rgba(223,131,46,.08));
+  position:absolute;
+  left:0;
+  bottom:0;
 }
 .home-tagline{padding:1vh 24px 1.4vh;text-align:center;flex-shrink:0}
 .home-tagline-main{
@@ -622,12 +626,12 @@ background:
   width:100%;
   aspect-ratio:1654/227;
   border-radius:16px;
-  background:linear-gradient(180deg,rgba(16,0,8,.98) 0%,rgba(31,3,18,.97) 50%,rgba(76,18,43,.88) 100%);
-  border:1px solid rgba(223,131,46,.20);
-  box-shadow:inset 0 9px 18px rgba(0,0,0,.55),inset 0 -9px 18px rgba(255,137,40,.13),0 0 16px rgba(223,131,46,.10);
+  background:linear-gradient(180deg,rgba(46,5,27,.95) 0%,rgba(28,1,15,.98) 52%,rgba(10,0,6,.98) 100%);
+  border:1px solid rgba(188,106,5,.30);
+  box-shadow:inset 0 9px 18px rgba(0,0,0,.50),inset 0 -9px 16px rgba(188,106,5,.08),0 0 14px rgba(223,131,46,.06);
 }
 .home-search-content{position:absolute;left:58px;right:58px;top:0;bottom:2.6vh;display:flex;align-items:center;gap:13px;pointer-events:none}
-.home-search-content .material-symbols-outlined{font-size:26px;color:#F29C22;font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;filter:drop-shadow(0 0 5px rgba(242,156,34,.95)) drop-shadow(0 0 11px rgba(242,156,34,.55))}
+.home-search-icon{width:27px;height:27px;object-fit:contain;filter:drop-shadow(0 0 5px rgba(242,156,34,.95)) drop-shadow(0 0 11px rgba(242,156,34,.55))}
 .home-search-content span:last-child{font-family:Manrope,sans-serif;font-size:clamp(12px,3.5vw,16px);font-weight:500;color:rgba(126,68,8,.9);line-height:1}
 .home-search-hit{position:absolute;inset:0 42px 2.6vh 42px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
 .home-recents-title{padding:0 42px .8vh;flex-shrink:0}
@@ -654,52 +658,52 @@ background:
 /* ── Settings page ── */
 #settings{background:#000;position:relative;overflow:hidden;padding-bottom:0}
 .settings-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none}
-.settings-back{position:absolute;top:calc(env(safe-area-inset-top) + 16px);left:16px;z-index:9;background:none;border:none;cursor:pointer;color:rgba(223,131,46,.72);padding:4px;display:flex;align-items:center;justify-content:center}
-.settings-scroll{position:relative;z-index:4;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(env(safe-area-inset-top) + 58px) 22px calc(128px + env(safe-area-inset-bottom))}
+.settings-back{position:absolute;top:calc(env(safe-area-inset-top) + 20px);left:16px;z-index:9;background:none;border:none;cursor:pointer;color:rgba(223,131,46,.72);padding:4px;display:flex;align-items:center;justify-content:center}
+.settings-scroll{position:relative;z-index:4;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(env(safe-area-inset-top) + 70px) 22px calc(128px + env(safe-area-inset-bottom))}
 .settings-scroll::-webkit-scrollbar{display:none}
-.settings-title{font-family:'Newsreader',serif;font-size:36px;font-weight:400;line-height:1;color:#f5d094;text-align:center;margin:0 0 30px;text-shadow:0 0 14px rgba(245,208,148,.12);letter-spacing:0}
+.settings-title{font-family:'Newsreader',serif;font-size:36px;font-weight:400;line-height:1;color:#f5d094;text-align:center;margin:0 0 34px;text-shadow:0 0 14px rgba(245,208,148,.12);letter-spacing:0}
 .settings-section{margin:0 0 18px}
-.settings-card{position:relative;border-radius:25px;overflow:hidden;padding:19px 24px;background:linear-gradient(180deg,rgba(58,6,35,.80),rgba(26,1,16,.80));box-shadow:0 0 0 2px rgba(234,157,63,0.57),0 0 0 4px rgba(147,52,52,0.45),0 0 24px rgba(204,90,90,.08),inset 0 0 90px rgba(58,6,35,.16)}
-.settings-card::before{content:'';position:absolute;inset:-13% -6%;background:url('/static/settings/card.png') center/100% 100% no-repeat;pointer-events:none;z-index:0}
+.settings-card{position:relative;border-radius:25px;overflow:hidden;padding:19px 24px;background:linear-gradient(180deg,rgba(46,5,27,.95) 0%,rgba(28,1,15,.98) 56%,rgba(10,0,6,.98) 100%);border:1px solid rgba(188,106,5,.30);box-shadow:inset 0 10px 18px rgba(72,9,39,.32),inset 0 -10px 20px rgba(0,0,0,.48),0 0 18px rgba(223,131,46,.06)}
+.settings-card::before{content:none}
 .settings-card>*{position:relative;z-index:1}
 .settings-label{font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;line-height:1;letter-spacing:.24em;text-transform:uppercase;color:#f08f14;text-shadow:0 0 10px rgba(240,143,20,.35);-webkit-text-stroke:.2px rgba(240,143,20,.32);margin:0 0 15px}
 .settings-question{font-family:'Newsreader',serif;font-size:26px;font-weight:400;line-height:1.12;color:#f9e0b8;margin:0 0 10px}
 .pickiness-options{display:flex;flex-direction:column;gap:0}
-.pickiness-row{position:relative;width:100%;min-height:39px;border:none;background:none;padding:3px 0;display:flex;align-items:center;gap:18px;text-align:left;cursor:pointer;font-family:'Manrope',sans-serif}
+.pickiness-row{position:relative;width:100%;min-height:50px;border:none;background:none;padding:6px 0;display:flex;align-items:center;gap:20px;text-align:left;cursor:pointer;font-family:'Manrope',sans-serif}
 .pickiness-row img{flex-shrink:0}
-.pickiness-radio{width:30px;height:30px;object-fit:cover;border-radius:50%;filter:drop-shadow(0 0 6px rgba(176,99,142,.18))}
-.pickiness-row.is-selected{min-height:46px;padding:4px 18px 4px 0;margin:0;border-radius:23px}
-.pickiness-row.is-selected::before{content:'';position:absolute;inset:-12% -6% -12% -12px;background:url('/static/settings/selection_card.png') center/100% 100% no-repeat;z-index:-1}
+.pickiness-radio{width:46px;height:46px;object-fit:cover;border-radius:50%;filter:drop-shadow(0 0 6px rgba(176,99,142,.18))}
+.pickiness-row.is-selected{min-height:58px;padding:6px 18px 6px 0;margin:0;border-radius:29px}
+.pickiness-row.is-selected::before{content:'';position:absolute;inset:-9% -6% -9% -12px;background:url('/static/settings/selection_card.png') center/100% 100% no-repeat;z-index:-1}
 .pickiness-row.is-selected .pickiness-radio{filter:drop-shadow(0 0 8px rgba(240,143,20,.66))}
 .pickiness-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
-.pickiness-name{font-size:13px;font-weight:700;line-height:1.08;color:#f9e0b8;margin:0}
-.pickiness-sub{font-size:11px;font-weight:400;line-height:1.18;color:#f3a1a1;margin:0}
+.pickiness-name{font-size:15px;font-weight:700;line-height:1.08;color:#f9e0b8;margin:0}
+.pickiness-sub{font-size:12px;font-weight:400;line-height:1.18;color:#f3a1a1;margin:0}
 .settings-info-row{display:flex;align-items:center;gap:17px;padding:6px 0 15px}
-.settings-book-icon{width:34px;height:34px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 5px rgba(176,99,142,.18))}
-.settings-account-icon{width:34px;height:34px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 5px rgba(176,99,142,.18))}
+.settings-book-icon{width:42px;height:42px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(176,99,142,.22))}
+.settings-account-icon{width:42px;height:42px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(176,99,142,.22))}
 .settings-primary-serif{font-family:'Newsreader',serif;font-size:18px;font-weight:400;line-height:1.08;color:#f5d094;margin:0}
 .settings-muted{font-family:'Manrope',sans-serif;font-size:13px;font-weight:400;line-height:1.18;color:#f3a1a1;margin:3px 0 0}
 .settings-divider{height:1px;background:linear-gradient(90deg,rgba(58,6,35,.25),rgba(204,90,90,.42),rgba(58,6,35,.25));margin:0}
 .settings-action{width:100%;min-height:42px;border:none;background:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0 0;cursor:pointer;text-align:left;font-family:'Manrope',sans-serif;font-size:16px;font-weight:600;line-height:1.08;color:#bc6a05}
 .settings-action+.settings-divider{margin-top:8px}
 .settings-action.destructive{color:#a4323a}
-.settings-chevron{width:32px;height:32px;object-fit:cover;flex-shrink:0}
+.settings-chevron{width:36px;height:36px;object-fit:contain;flex-shrink:0}
 .settings-account-card .settings-info-row{padding-bottom:15px}
 .settings-account-card .settings-action{padding-top:10px}
 .settings-about-card{padding-bottom:18px}
-.settings-about-hero{display:grid;grid-template-columns:32% 1fr;gap:17px;align-items:start;padding:0 0 16px}
-.settings-about-logo{width:100%;max-height:112px;object-fit:contain;object-position:center;mix-blend-mode:screen;filter:drop-shadow(0 0 18px rgba(223,131,46,.12))}
-.settings-wordmark{width:68%;max-width:156px;height:44px;object-fit:cover;object-position:center 85%;display:block;margin:0 0 5px;mix-blend-mode:screen;filter:drop-shadow(0 0 12px rgba(223,131,46,.18))}
-.settings-tagline{font-family:'Newsreader',serif;font-size:17px;font-style:italic;font-weight:400;line-height:1.16;color:#b0638e;margin:0 0 6px}
-.settings-about-copy{font-family:'Manrope',sans-serif;font-size:13px;font-weight:400;line-height:1.26;color:#f3a1a1;margin:0 0 8px}
-.settings-version{font-family:'Manrope',sans-serif;font-size:10px;font-weight:400;line-height:1.25;color:#f3a1a1;margin:0}
-.settings-link-row{width:100%;min-height:42px;border:none;background:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;cursor:pointer;text-align:left;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;line-height:1.08;color:#f9e0b8}
+.settings-about-hero{display:grid;grid-template-columns:36% 1fr;gap:17px;align-items:center;padding:0 0 20px}
+.settings-about-logo{width:100%;max-height:150px;object-fit:contain;object-position:center;filter:brightness(1.08) saturate(1.06) drop-shadow(0 0 16px rgba(223,131,46,.14))}
+.settings-wordmark{width:76%;max-width:176px;height:56px;object-fit:cover;object-position:center 82%;display:block;margin:0 0 3px;filter:brightness(1.08) saturate(1.06) drop-shadow(0 0 11px rgba(223,131,46,.16))}
+.settings-tagline{font-family:'Newsreader',serif;font-size:17px;font-style:italic;font-weight:400;line-height:1.16;color:#b0638e;margin:0 0 7px}
+.settings-about-copy{font-family:'Manrope',sans-serif;font-size:13px;font-weight:400;line-height:1.35;color:#f0a0a0;margin:0 0 10px}
+.settings-version{font-family:'Manrope',sans-serif;font-size:10px;font-weight:400;line-height:1.25;color:#e59292;margin:0}
+.settings-link-row{width:100%;min-height:50px;border:none;background:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;cursor:pointer;text-align:left;font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;line-height:1.08;color:#bc6a05}
 .settings-bottom-nav{position:absolute;bottom:0;left:0;right:0;z-index:50;background:#000}
 .settings-bottom-nav::before{content:'';position:absolute;inset:-18px 0 auto;height:18px;background:linear-gradient(180deg,rgba(0,0,0,0),#000);pointer-events:none}
-.settings-bottom-nav img[aria-hidden="true"]{width:100%;display:block;filter:brightness(.78) saturate(.85)}
+.settings-bottom-nav img[aria-hidden="true"]{width:100%;display:block}
 .settings-nav-buttons{position:absolute;inset:0;display:flex;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom)}
 .settings-nav-buttons button{background:none;border:none;cursor:pointer;padding:8px 14px;-webkit-tap-highlight-color:transparent}
-.settings-nav-buttons img{height:28px;display:block;transform:translateY(6px)}
+.settings-nav-buttons img{height:32px;display:block;transform:translateY(6px);filter:brightness(1.15) saturate(1.18) drop-shadow(0 0 8px rgba(242,156,34,.24))}
 @media (max-width:380px){
   .settings-scroll{padding-left:18px;padding-right:18px}
   .settings-card{padding:17px 20px;border-radius:22px}
@@ -837,15 +841,14 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ═══ HOME ═══ -->
 <!-- ═══ LOGIN SCREEN ═══ -->
 <div id="login" class="screen active login-mock-screen">
-  <img class="login-mockup-image" src="/static/login-page-mockup.png" aria-hidden="true">
   <section class="login-mock-hero" aria-label="Inkling">
     <img class="login-mock-bg" src="/static/home-bg.png" aria-hidden="true">
-    <img class="login-mock-bulb" src="/static/home-bulb.png" aria-hidden="true">
+    <img class="login-mock-bulb" src="/static/home-bulb-original.png" aria-hidden="true">
     <div class="login-mock-wordmark-wrap">
-      <img class="login-mock-wordmark" src="/static/home-wordmark.png" alt="">
+      <img class="login-mock-wordmark" src="/static/home-wordmark-original-keyed.png" alt="">
     </div>
     <div class="login-mock-book-wrap">
-      <img class="login-mock-book" src="/static/home-book.png" aria-hidden="true">
+      <img class="login-mock-book" src="/static/home-book-original-keyed.png" aria-hidden="true">
     </div>
     <div id="login-logo-tap" class="login-logo-tap-target" aria-label="Developer bypass"></div>
   </section>
@@ -1150,14 +1153,14 @@ window.addEventListener('unhandledrejection', function(e) {
 
 <div id="home" class="screen" style="background:#000;position:relative;overflow:hidden">
   <img src="/static/home-bg.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:0" aria-hidden="true">
-  <img class="home-bulb-img" src="/static/home-bulb.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
+  <img class="home-bulb-img" src="/static/home-bulb-original.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:1" aria-hidden="true">
   <main class="home-main">
     <div class="home-top-spacer"></div>
     <div class="home-wordmark-wrap" aria-label="Inkling">
-      <img class="home-wordmark" src="/static/home-wordmark-cutout.png" alt="">
+      <img class="home-wordmark" src="/static/home-wordmark-original-keyed.png" alt="">
     </div>
     <div class="home-book-wrap">
-      <img class="home-book" src="/static/home-book-cutout.png" aria-hidden="true">
+      <img class="home-book" src="/static/home-book-original-keyed.png" aria-hidden="true">
     </div>
     <div class="home-tagline">
       <p class="home-tagline-main">To read, or not to read?</p>
@@ -1174,7 +1177,7 @@ window.addEventListener('unhandledrejection', function(e) {
     <div class="home-search-wrap">
       <div class="home-search-surface" aria-hidden="true"></div>
       <div class="home-search-content" aria-hidden="true">
-        <span class="material-symbols-outlined">search</span>
+        <img class="home-search-icon" src="/static/home-search-icon.png" alt="">
         <span>Search by title or author</span>
       </div>
       <button class="home-search-hit" onclick="goToSearch()" aria-label="Search by title or author"></button>
@@ -3338,7 +3341,7 @@ function closeUploadHelp() {
       <div class="settings-card">
         <p class="settings-label">Reading History</p>
         <div class="settings-info-row">
-          <img class="settings-book-icon" src="/static/settings/book_icon.png" alt="">
+          <img class="settings-book-icon" src="/static/settings/book_icon-cropped.png" alt="">
           <div>
             <p id="settings-book-count" class="settings-primary-serif">312 books powering your recommendations</p>
             <p id="settings-lib-date" class="settings-muted">Last updated May 31, 2026</p>
@@ -3348,7 +3351,7 @@ function closeUploadHelp() {
         <div class="settings-divider"></div>
         <button class="settings-action" onclick="updateLibrary()">
           <span>Update your reading history</span>
-          <img class="settings-chevron" src="/static/settings/chevron_amber.png" alt="">
+          <img class="settings-chevron" src="/static/settings/chevron_amber-cropped.png" alt="">
         </button>
       </div>
     </section>
@@ -3357,7 +3360,7 @@ function closeUploadHelp() {
       <div class="settings-card settings-account-card">
         <p class="settings-label">Account</p>
         <div class="settings-info-row">
-          <img class="settings-account-icon" src="/static/settings/account_icon.png" alt="">
+          <img class="settings-account-icon" src="/static/settings/account_icon-cropped.png" alt="">
           <div>
             <p id="settings-auth-label" class="settings-primary-serif">Signed in with Apple</p>
             <p id="settings-email" class="settings-muted">marisa@inkling.book</p>
@@ -3366,12 +3369,12 @@ function closeUploadHelp() {
         <div class="settings-divider"></div>
         <button class="settings-action" onclick="authLogout()">
           <span>Sign Out</span>
-          <img class="settings-chevron" src="/static/settings/chevron_amber.png" alt="">
+          <img class="settings-chevron" src="/static/settings/chevron_amber-cropped.png" alt="">
         </button>
         <div class="settings-divider"></div>
         <button class="settings-action destructive" onclick="showDeleteAccountModal()">
           <span>Delete Account</span>
-          <img class="settings-chevron" src="/static/settings/chevron_red.png" alt="">
+          <img class="settings-chevron" src="/static/settings/chevron_red-cropped.png" alt="">
         </button>
       </div>
     </section>
@@ -3382,18 +3385,18 @@ function closeUploadHelp() {
         <div class="settings-about-hero">
           <img class="settings-about-logo" src="/static/settings/settings_logo.png" alt="">
           <div>
-            <img class="settings-wordmark" src="/static/settings/settings_wordmark.png" alt="Inkling">
+            <img class="settings-wordmark" src="/static/settings/settings_wordmark-keyed.png" alt="Inkling">
             <p class="settings-tagline">To read, or not to read?</p>
             <p class="settings-about-copy">Inkling is your personal librarian, helping you choose books through a deep understanding of your taste.</p>
             <p class="settings-version">Version 1.0.0 &copy; 2026 Inkling. All rights reserved.</p>
           </div>
         </div>
         <div class="settings-divider"></div>
-        <button class="settings-link-row" type="button"><span>Get Help</span><img class="settings-chevron" src="/static/settings/chevron_amber.png" alt=""></button>
+        <button class="settings-link-row" type="button"><span>Get Help</span><img class="settings-chevron" src="/static/settings/chevron_amber-cropped.png" alt=""></button>
         <div class="settings-divider"></div>
-        <button class="settings-link-row" type="button"><span>Privacy Policy</span><img class="settings-chevron" src="/static/settings/chevron_amber.png" alt=""></button>
+        <button class="settings-link-row" type="button"><span>Privacy Policy</span><img class="settings-chevron" src="/static/settings/chevron_amber-cropped.png" alt=""></button>
         <div class="settings-divider"></div>
-        <button class="settings-link-row" type="button"><span>Terms of Use</span><img class="settings-chevron" src="/static/settings/chevron_amber.png" alt=""></button>
+        <button class="settings-link-row" type="button"><span>Terms of Use</span><img class="settings-chevron" src="/static/settings/chevron_amber-cropped.png" alt=""></button>
       </div>
     </section>
   </main>

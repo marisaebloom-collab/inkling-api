@@ -716,6 +716,21 @@ background:
 
 .hero-ph{width:58vw;max-width:220px;aspect-ratio:496/784;align-self:center;flex-shrink:0}
 @keyframes calib-glow-pulse{0%,100%{opacity:.32;filter:blur(30px)}50%{opacity:.72;filter:blur(50px)}}
+.calib-stage{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(env(safe-area-inset-top) + 106px) 24px calc(env(safe-area-inset-bottom) + 56px);position:relative;z-index:1}
+.calib-title{font-family:'Newsreader',serif;font-size:26px;font-weight:400;font-style:normal;line-height:1.08;color:#f5d094;text-align:center;margin:0;letter-spacing:0}
+.calib-book-wrap{width:min(86vw,340px);height:min(53vh,386px);margin:44px 0 32px;position:relative;flex-shrink:1}
+.calib-book-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 24px rgba(240,143,20,.14))}
+.calib-percent{font-family:'Newsreader',serif;font-size:17px;font-weight:352;font-variation-settings:'opsz' 16,'wght' 352;line-height:1;color:#bc6a05;text-align:center;margin:0;min-height:21px;letter-spacing:0}
+.calib-progress-wrap{width:100%;max-width:318px;margin-top:26px}
+.calib-progress-track{position:relative;width:100%;height:8px;border-radius:999px;background:rgba(58,6,35,.63);overflow:visible}
+.calib-progress-fill{position:absolute;left:0;top:0;height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#bc6a05 0%,#f08f14 100%);box-shadow:0 0 9px rgba(240,143,20,.78),0 0 28px rgba(240,143,20,.42);transition:width 1.4s ease}
+.calib-message{font-family:'Manrope',sans-serif;font-size:18px;font-weight:600;line-height:1.3;color:#bc6a05;text-align:center;min-height:48px;max-width:318px;transition:opacity .4s ease;opacity:0;margin:28px 0 0;letter-spacing:0}
+@media (max-height:720px){
+  .calib-stage{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:calc(env(safe-area-inset-bottom) + 34px)}
+  .calib-book-wrap{height:min(49vh,326px);margin:28px 0 24px}
+  .calib-progress-wrap{margin-top:20px}
+  .calib-message{margin-top:22px}
+}
 
 
 /* ── Onboarding instructions screen ── */
@@ -1007,26 +1022,18 @@ window.addEventListener('unhandledrejection', function(e) {
 <!-- ═══ ONBOARDING — CALIBRATION ═══ -->
 <div id="onboarding-processing" class="screen" style="background:#000;align-items:center;justify-content:center;position:relative;overflow:hidden">
 
-  <!-- Background ambient glow -->
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(124,48,96,.30) 0%,rgba(223,131,46,.08) 50%,transparent 72%);pointer-events:none;animation:calib-glow-pulse 2s ease-in-out infinite"></div>
-
-  <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:340px;padding:0 28px;position:relative;z-index:1;transform:translateY(-8px)">
-
-    <!-- Glowing book image, CSS fallback if image absent -->
-    <div id="calib-book-wrap" style="position:relative;width:150px;height:150px;flex-shrink:0;margin-bottom:24px">
-      <div id="calib-book-fallback" style="position:absolute;inset:0;border-radius:20px;background:radial-gradient(ellipse 70% 82% at 50% 42%,rgba(223,131,46,.52) 0%,rgba(124,48,96,.36) 52%,rgba(74,26,56,.18) 80%,transparent 100%);animation:calib-glow-pulse 2s ease-in-out infinite"></div>
-      <img data-src="calibration_book.png" alt="" id="calib-book-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;opacity:0" onload="this.style.opacity='1';var f=document.getElementById('calib-book-fallback');if(f)f.style.display='none'">
+  <div class="calib-stage">
+    <h1 class="calib-title">Building your taste profile...</h1>
+    <div id="calib-book-wrap" class="calib-book-wrap">
+      <video class="calib-book-video" src="/static/profile-building/magic-book.mp4" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
     </div>
-
-    <!-- Single fading message -->
-    <p id="calib-message" style="font-family:'Newsreader',serif;font-style:italic;font-size:20px;color:rgba(245,208,148,.9);text-align:center;line-height:1.38;min-height:58px;max-width:280px;transition:opacity .4s ease;opacity:0;margin:0"></p>
-    <p id="calib-progress-label" style="font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;color:rgba(223,131,46,.70);text-align:center;margin:8px 0 0;min-height:16px"></p>
-
-    <!-- Progress bar -->
-    <div style="margin-top:14px;width:100%;max-width:200px;height:2px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden">
-      <div id="calib-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(124,48,96,.75),rgba(223,131,46,.85));border-radius:999px;transition:width 1.4s ease"></div>
+    <p id="calib-progress-label" class="calib-percent"></p>
+    <div class="calib-progress-wrap">
+      <div class="calib-progress-track">
+        <div id="calib-progress-bar" class="calib-progress-fill"></div>
+      </div>
     </div>
-
+    <p id="calib-message" class="calib-message"></p>
   </div>
 </div>
 

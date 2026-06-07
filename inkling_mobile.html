@@ -563,7 +563,7 @@ background:
   flex-direction:column;
   padding:env(safe-area-inset-top) 0 calc(70px + env(safe-area-inset-bottom)) 0;
 }
-.home-bulb-img{transform:translateY(30px)}
+.home-bulb-img{transform:translateY(30px);filter:hue-rotate(-10deg) saturate(.82) brightness(.98)}
 .home-top-spacer{flex:0 0 22.7vh;min-height:178px;max-height:232px}
 .home-wordmark-wrap{
   width:30.8%;
@@ -576,9 +576,8 @@ background:
   width:100%;
   height:auto;
   display:block;
-  mix-blend-mode:screen;
-  opacity:.96;
-  filter:brightness(1.06) saturate(1.04) drop-shadow(0 0 12px rgba(242,156,34,.18));
+  opacity:.92;
+  filter:contrast(.74) brightness(1.16) saturate(.90) drop-shadow(0 0 9px rgba(242,156,34,.14));
 }
 .home-book-wrap{
   width:52.8%;
@@ -591,9 +590,8 @@ background:
   width:100%;
   height:auto;
   display:block;
-  mix-blend-mode:screen;
-  opacity:.96;
-  filter:brightness(1.03) saturate(1.02) drop-shadow(0 0 12px rgba(223,131,46,.10));
+  opacity:.94;
+  filter:contrast(.82) brightness(1.08) saturate(.92) drop-shadow(0 0 10px rgba(223,131,46,.08));
 }
 .home-tagline{padding:1vh 24px 1.4vh;text-align:center;flex-shrink:0}
 .home-tagline-main{
@@ -629,8 +627,8 @@ background:
   box-shadow:inset 0 9px 18px rgba(0,0,0,.55),inset 0 -9px 18px rgba(255,137,40,.13),0 0 16px rgba(223,131,46,.10);
 }
 .home-search-content{position:absolute;left:58px;right:58px;top:0;bottom:2.6vh;display:flex;align-items:center;gap:13px;pointer-events:none}
-.home-search-content .material-symbols-outlined{font-size:25px;color:#F29C22;filter:drop-shadow(0 0 8px rgba(242,156,34,.85))}
-.home-search-content span:last-child{font-family:Manrope,sans-serif;font-size:clamp(12px,3.5vw,16px);font-weight:650;color:rgba(126,68,8,.9);line-height:1}
+.home-search-content .material-symbols-outlined{font-size:26px;color:#F29C22;font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;filter:drop-shadow(0 0 5px rgba(242,156,34,.95)) drop-shadow(0 0 11px rgba(242,156,34,.55))}
+.home-search-content span:last-child{font-family:Manrope,sans-serif;font-size:clamp(12px,3.5vw,16px);font-weight:500;color:rgba(126,68,8,.9);line-height:1}
 .home-search-hit{position:absolute;inset:0 42px 2.6vh 42px;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
 .home-recents-title{padding:0 42px .8vh;flex-shrink:0}
 .home-recents-title h3{font-family:'Newsreader',serif;font-size:clamp(16px,4.1vw,21px);font-weight:400;font-style:normal;color:#D6AD73;margin:0}

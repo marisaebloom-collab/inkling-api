@@ -1,0 +1,9 @@
+Brand[[:space:]]Assets/**/*.mov filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.ps filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.psd filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.psb filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.png filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+Brand[[:space:]]Assets/Logos/Logo[[:space:]]No[[:space:]]Wordmark[[:space:]]New[[:space:]]Haze filter=lfs diff=lfs merge=lfs -text

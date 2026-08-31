@@ -1,0 +1,53 @@
+INKLING BRAND ASSETS - STILL MISSING after the first Trash restore
+Checked 2026-08-31. 12 of 64 files came back; these 45 did not.
+Tip: paste a name into the Trash search box, then right-click the file -> "Put Back".
+
+--- LAYERED PSDs (irreplaceable - highest priority) ---
+2.psd
+bulb with overlay.psd
+Bulb without beam.psd
+HOME2.psd
+Home Icon.psd
+Mauve bloom.psd
+Onboarding Journey.psd
+OnboardingAboutPage.psd
+overlay_particles_amber_sparse_v1.psd
+overlay_particles_plum_v1.psd
+Profile Icon.psd
+Recents Icon.psd
+Upload page.psd
+Upload page-Recovered.psd
+WELCOME.psd
+
+--- FLAT IMAGES (many have a flattened export in inkling-api/static) ---
+1 Bloom Layers.png
+2 Light Rays Layer.png
+Book Spine Light Off.png
+Book with magic emerging.png
+Button Option 1.png
+Chair Scene.png
+Dark opening animation frame.png
+Hard Pass Bulb.png
+Home Icon Active.png
+Home Icon Inactive.png
+Home Page background.png
+Inkling word in the dark.png
+Instructions.png
+New Chair Scene.png
+Onboarding Chair Scene No Beam.png
+Onboarding Journey.png
+Open Book with Magic.png
+Plum Book.png
+Profile Icon Active.png
+Profile Icon Inactive.png
+Reading Identity Reveal.png
+Recents Icon Active.png
+Recents Icon Inactive.png
+Start Curating Button Text.png
+Strong Inkling Bulb.png
+Upload Page.png
+Welcome 2.png
+Welcome2.png
+Welcome Background.png
+Welcome Page Bulb.png
+Welcome Page Mock Up.png
